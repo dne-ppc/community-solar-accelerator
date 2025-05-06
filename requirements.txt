@@ -1,0 +1,14 @@
+pandas
+ipython
+ipykernel
+jupyter
+numpy<2.2
+matplotlib
+plotly
+streamlit
+pydantic
+metalog
+scipy
+pyyaml
+tabulate
+numpy-financial
