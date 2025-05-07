@@ -215,6 +215,7 @@ class FinancialModel(BaseModel):
     debt_balance: NdArray = None
     deferred_tax_liability: NdArray = None
     initial_private: NdArray = None
+    initial_public: NdArray = None
     community_savings: NdArray = None
 
     summary: Dict[str, Dict[str, NdArray]] = Field(default_factory=dict)
@@ -225,6 +226,8 @@ class FinancialModel(BaseModel):
     debt_term_years: int = Field(
         default=10, description="Term (years) for loan amortization"
     )
+
+
 
     def run_simulation(self, inputs: Dict[str, np.ndarray]):
         n_iter = inputs["Public Seed Grant (CAD)"].shape[0]
@@ -262,6 +265,7 @@ class FinancialModel(BaseModel):
         public_balance = inputs["Public Seed Grant (CAD)"].copy()[:, 0]
         private_balance = inputs["Private Investment (CAD)"].copy()[:, 0]
         initial_private = private_balance.copy()
+        initial_public = public_balance.copy()
 
         # Simulation loop
         for t in range(Y):
@@ -281,7 +285,8 @@ class FinancialModel(BaseModel):
             tax_rate = inputs.get("Corporate Tax Rate (%)")[:, t] / 100
             opex_proj = inputs.get("Opex per Project (CAD/project)")[:, t]
             cf = inputs.get("Capacity Factor (%)")[:, t] / 100
-            spread = inputs.get("Price Spread (CAD/kWh)")[:, t]
+            retail_price = inputs.get("Retail Price (CAD/kWh)")[:, t]
+            ppa_price = inputs.get("PPA Price (CAD/kWh)")[:, t]
 
             # 1) per‐project costs
             portfolio_cost = size_t * cost_kw  # total cost per project
@@ -385,8 +390,10 @@ class FinancialModel(BaseModel):
             prev_cap = total_capacity[:, t - 1]
             total_capacity[:, t] = prev_cap + new_projects * size_t
             energy = prev_cap * cf * 8760
-            revenue[:, t] = energy * spread + interest_income_t
+            revenue[:, t] = energy * ppa_price + interest_income_t
             opex[:, t] = opex_proj * total_projects[:, t]
+
+            community_savings[:, t] = retail_price * energy - ppa_price * energy
 
             # Depreciation: straight-line on cumulative CAPEX
             cumulative_capex = np.sum(capex[:, :t], axis=1)
@@ -477,117 +484,11 @@ class FinancialModel(BaseModel):
         self.assets = assets
         self.interest_income = interest_income
         self.initial_private = initial_private
+        self.initial_public = initial_public
         self.deferred_tax_amortization = deferred_tax_amortization
+        self.community_savings = community_savings
 
         self.summary = self.summarize_percentiles()
-
-    def get_gaap_report(self, percentile: int = 50) -> Dict[str, pd.DataFrame]:
-        """
-        Returns GAAP-style Income Statement, Balance Sheet, Cash Flow Statement at the given percentile,
-        plus key financing metrics (IRR, multiple, public leverage, self-sustainability).
-
-        :param percentile: P-value for percentile summary (e.g., 50 for P50)
-        :return: dict with DataFrames and metrics
-        """
-        years = list(range(1, self.years + 1))
-        idx = years
-
-        # Helper to pick percentile series
-        def pct(arr):
-            return np.percentile(arr, [percentile], axis=0)[0]
-
-        # Income Statement
-        rev = pct(self.revenue)
-        opex = pct(self.opex)
-        depr = pct(self.depreciation_expense)
-        intl = pct(self.interest_expense)
-        tax = pct(self.tax_expense)
-        net = rev - opex - depr - intl - tax
-        df_is = pd.DataFrame(
-            {
-                "Revenue": rev,
-                "Opex": opex,
-                "Depreciation": depr,
-                "Interest Expense": intl,
-                "Tax Expense": tax,
-                "Net Income": net,
-            },
-            index=idx,
-        )
-
-        # Balance Sheet
-        assets = pct(self.assets)
-        dtl = pct(self.deferred_tax_liability)
-        debt = pct(self.debt_balance)
-        equity = assets - dtl - debt
-        df_bs = pd.DataFrame(
-            {
-                "Assets": assets,
-                "Deferred Tax Liability": dtl,
-                "Debt": debt,
-                "Equity": equity,
-            },
-            index=idx,
-        )
-
-        # Cash Flow Statement
-        # CFO = Net Income + Depreciation + Deferred Tax Amortization + Interest Expense
-        dta = pct(self.deferred_tax_amortization)
-        cfo = net + depr + dta + intl
-        # CFI = - CAPEX
-        cfi = -pct(self.capex)
-        # CFF = Debt Draws - Principal Repayment - Dividends
-        # Compute debt draws = Δdebt + principal repayment
-        debt_arr = self.debt_balance
-        pr = self.principal_repayment
-        draws = np.diff(np.pad(debt_arr, ((0, 0), (1, 0))), axis=1) + pr
-        cff = pct(draws) - pct(pr) - pct(self.returns_to_private)
-        df_cf = pd.DataFrame({"CFO": cfo, "CFI": cfi, "CFF": cff}, index=idx)
-
-        # Investor Metrics
-        # Build median cash flow series for IRR (approximation)
-        initial = np.median(self.initial_private)
-        cash_flows = [-initial] + list(np.median(self.returns_to_private, axis=0))
-        irr = npf.irr(cash_flows) * 100
-        multiple = sum(cash_flows[1:]) / initial
-
-        # Public Leverage Metrics
-        pub = np.median(self.public_equity_balance[:, 0])
-        total_cap = np.median(self.total_capacity[:, -1])
-        cap_per_pub = total_cap / pub *1000 if pub else np.nan
-        capex_sum = np.sum(pct(self.capex))
-        deploy_multiple = capex_sum / pub if pub else np.nan
-
-        # Self-sustainability: projects in final year if initial equity exhausted
-        pub_bal_end = pct(self.public_equity_balance)
-        priv_bal_end = pct(self.private_equity_balance)
-        sust = (
-            pub_bal_end[-1] <= 1e-6 and priv_bal_end[-1] <= 1e-6 and df_is.index[-1] > 0
-        )
-
-        metrics = pd.Series(
-            {
-                "Investor IRR (%)": irr,
-                "Investor Multiple (x)": multiple,
-                "kW per $ Public Grant": cap_per_pub,
-                "Capex per $ Public Grant (x)": deploy_multiple,
-                "Self-sustaining by Year 25": sust,
-            }
-        )
-
-        return {
-            "Income Statement": df_is,
-            "Balance Sheet": df_bs,
-            "Cash Flow Statement": df_cf,
-            "Government Metrics": pd.Series({
-                "W per $ Public Grant": cap_per_pub,
-                "Capex per $ Public Grant (x)": deploy_multiple,
-            }),
-            "Investor Metrics": pd.Series({
-                "Investor IRR (%)": irr,
-                "Investor Multiple (x)": multiple,
-            }),
-        }
 
     def summarize_percentiles(
         self, percentiles: List[float] = None
@@ -637,9 +538,99 @@ class FinancialModel(BaseModel):
             "Total Projects": pct(self.total_projects),
             "Total Capacity (kW)": pct(self.total_capacity),
             "Capital Expenditures (CAD)": pct(self.capex),
+            "Community Savings (CAD)": pct(self.community_savings),
+            "Returns to Private (CAD)": pct(self.returns_to_private),
         }
 
         return summary
+    
+    def get_investor_dashboard(self, percentile: int = 50) -> Dict[str, Any]:
+        """Enhanced investor-focused metrics and visualizations"""
+        def pct(arr):
+            return np.percentile(arr, [percentile], axis=0)[0]
+        
+        # Cash flow analysis
+        initial_investment = pct(self.initial_private)
+        print(f"Initial Investment (P{percentile}): {initial_investment}")
+        returns = pct(self.returns_to_private[:,:self.return_year+1])
+        cumulative_returns = np.cumsum(returns)
+        
+        # Create cash flow chart
+        fig_cashflow = go.Figure()
+        fig_cashflow.add_trace(go.Bar(
+            x=list(range(self.return_year+1)),
+            y=returns,
+            name='Annual Returns'
+        ))
+        fig_cashflow.add_trace(go.Scatter(
+            x=list(range(self.return_year+1)),
+            y=cumulative_returns,
+            name='Cumulative Returns',
+            line=dict(color='red', width=2)
+        ))
+        fig_cashflow.update_layout(
+            title=f'Investor Cash Flows (P{percentile})',
+            xaxis_title='Year',
+            yaxis_title='CAD',
+            hovermode='x unified'
+        )
+        st.plotly_chart(fig_cashflow, use_container_width=True)
+        
+        # Risk metrics
+        total_return = cumulative_returns[-1]
+        irr = npf.irr([-initial_investment] + list(returns)) * 100
+        multiple = total_return / initial_investment
+
+        metrics= pd.Series({
+                'Initial Investment (CAD)': initial_investment,
+                'Total Return (CAD)': total_return,
+                'Multiple (x)': multiple,
+                'IRR (%)': irr,
+                'Payback Period (years)': np.argmax(cumulative_returns >= initial_investment) + 1
+            }
+        )
+
+        df = metrics.to_frame(name=f"P{pct}").rename_axis("Metric")
+        st.dataframe(df.style.format("{:,.2f}"), use_container_width=False)
+
+
+    def get_government_dashboard(self, percentile: int = 50) -> Dict[str, Any]:
+        """Enhanced government-focused metrics and visualizations"""
+        def pct(arr):
+            return np.percentile(arr, [percentile], axis=0)[0]
+        
+        public_grant = pct(self.initial_public)
+        total_capacity = pct(self.total_capacity)[-1]
+        total_projects = pct(self.total_projects)[-1]
+        community_savings = pct(self.community_savings)[-1]
+        
+        # Capacity deployment chart
+        fig_capacity = go.Figure()
+        fig_capacity.add_trace(go.Scatter(
+            x=list(range(self.years)),
+            y=pct(self.total_capacity),
+            name='Cumulative Capacity',
+            line=dict(color='green', width=2)
+        ))
+        
+        # Leverage metrics
+        total_capex = pct(self.capex).sum()
+        leverage_multiple = total_capex / public_grant
+        
+
+        metrics= pd.Series({
+                'Public Grant (CAD)': public_grant,
+                'Total Capacity Deployed (kW)': total_capacity,
+                'Total Projects Built': total_projects,
+                'Total Community Savings (CAD)': community_savings,
+                'Capex Leverage Multiple (x)': leverage_multiple,
+                'kW per $ Public Grant': total_capacity / public_grant * 1000,
+                # 'Estimated Jobs Created': total_projects * 2.5  # Example job multiplier
+            }
+        )
+
+        df = metrics.to_frame(name=f"P{pct}").rename_axis("Metric")
+        st.dataframe(df.style.format("{:,.2f}"), use_container_width=False)
 
 
 class Simulation(BaseModel):

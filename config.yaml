@@ -24,15 +24,25 @@ distributions:
 
   # Equity and seed inputs
 
-
-  - label: "Price Spread (CAD/kWh)"
+  - label: "Retail Price (CAD/kWh)"
     min_value: 0.0
-    p10: 0.01
-    p50: 0.02
-    p90: 0.08
-    max_value: 0.12
-    use_fixed: false
-    fixed_value: 0.06
+    p10: 0.07
+    p50: 0.10
+    p90: 0.13
+    max_value: 0.25
+    use_fixed: true
+    fixed_value: 0.10
+    step: 0.01
+
+
+  - label: "PPA Price (CAD/kWh)"
+    min_value: 0.0
+    p10: 0.05
+    p50: 0.07
+    p90: 0.09
+    max_value: 0.20
+    use_fixed: true
+    fixed_value: 0.05
     step: 0.01
 
   - label: "Debt Financing (%)"
@@ -48,8 +58,8 @@ distributions:
   - label: "Opex per Project (CAD/project)"
     min_value: 0
     p10: 1000
-    p50: 4000
-    p90: 10000
+    p50: 1500
+    p90: 2000
     max_value: 20000
     use_fixed: false
     fixed_value: 2000
@@ -155,12 +165,3 @@ distributions:
     fixed_value: 5.0
     step: 0.01
 
-  - label: "AITC Rate (%)"
-    min_value: 0.0
-    p10: 25.0
-    p50: 30.0
-    p90: 35.0
-    max_value: 40.0
-    use_fixed: true
-    fixed_value: 30.0
-    step: 1.0

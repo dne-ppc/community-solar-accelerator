@@ -6,7 +6,7 @@ from visualize import (
 )
 from doc import display_latex
 import pandas as pd
-import plotly.graph_objects as go 
+import plotly.graph_objects as go
 
 
 # Initialize or retrieve the Simulation in session state
@@ -78,39 +78,6 @@ class Layout:
         st.header("Model Specification")
         display_latex()
 
-    @staticmethod
-    def financial_statements(sim: Simulation):
-        st.header("GAAP-Style Financial Statements & Key Metrics")
-        model = sim.model
-
-        if not model.summary:
-            st.info("Run the simulation first in the sidebar to view statements.")
-            return
-
-        # Select percentile
-        p = st.selectbox("Select percentile", [10, 50, 90], index=1)
-
-        # Pull the GAAP report
-        report = model.get_gaap_report(percentile=p)
-
-        # Key Metrics
-        st.subheader("Key Performance Metrics")
-        km = report["Key Metrics"].copy()
-        # Format boolean nicely
-        # km["Self-sustaining by Year 25"] = km["Self-sustaining by Year 25"].map({True: "Yes", False: "No"})
-        st.dataframe(km.to_frame("Value"))
-
-        # # Income Statement
-        # st.subheader(f"Income Statement (P{p})")
-        # st.dataframe(report["Income Statement"].style.format("{:,.0f}"))
-
-        # # Balance Sheet
-        # st.subheader(f"Balance Sheet (P{p})")
-        # st.dataframe(report["Balance Sheet"].style.format("{:,.0f}"))
-
-        # # Cash Flow Statement
-        # st.subheader(f"Cash Flow Statement (P{p})")
-        # st.dataframe(report["Cash Flow Statement"].style.format("{:,.0f}"))
 
     @staticmethod
     def forecast_plots(sim: Simulation):
@@ -166,14 +133,7 @@ class Layout:
             "Select percentile for investor metrics", [10, 50, 90], index=1
         )
 
-        # Get the table and show it
-        report = sim.model.get_gaap_report(
-            percentile=pct
-        )  # :contentReference[oaicite:0]{index=0}:contentReference[oaicite:1]{index=1}
-        metrics = report["Investor Metrics"]
-        # Convert Series to DataFrame, rename column
-        df = metrics.to_frame(name=f"P{pct}").rename_axis("Metric")
-        st.dataframe(df.style.format("{:,.2f}"),use_container_width=False)
+        sim.model.get_investor_dashboard(percentile=pct)
 
     @staticmethod
     def community_benefits(sim: Simulation):
@@ -199,19 +159,12 @@ class Layout:
             fig = go.Figure()
             for p in [10, 50, 90]:
                 vals = summary.get(f"P{p}", [])
-                fig.add_trace(
-                    go.Scatter(
-                        x=years,
-                        y=vals,
-                        mode='lines',
-                        name=f'P{p}'
-                    )
-                )
+                fig.add_trace(go.Scatter(x=years, y=vals, mode="lines", name=f"P{p}"))
             fig.update_layout(
                 title="Community Savings (CAD) Over Time",
                 xaxis_title="Year",
                 yaxis_title="Savings (CAD)",
-                legend_title="Percentile"
+                legend_title="Percentile",
             )
             st.plotly_chart(fig, use_container_width=True)
         else:
@@ -242,16 +195,7 @@ class Layout:
             "Select percentile for government metrics", [10, 50, 90], index=1
         )
 
-        # Get the table and show it
-        report = sim.model.get_gaap_report(
-            percentile=pct
-        )  # :contentReference[oaicite:0]{index=0}:contentReference[oaicite:1]{index=1}
-        metrics = report["Government Metrics"]
-        # Convert Series to DataFrame, rename column
-        df = metrics.to_frame(name=f"P{pct}").rename_axis("Metric")
-        st.dataframe(df.style.format("{:,.2f}"),use_container_width=False)
-
-
+        sim.model.get_government_dashboard(percentile=pct)
     @staticmethod
     def create_tabs():
         """
@@ -260,27 +204,27 @@ class Layout:
         sim = get_simulation()
         tabs = st.tabs(
             [
-                "Formula",
                 "Inputs",
                 "Forecasts",
                 "Sensitivity",
                 "Investor Benefits",
                 "Community Benefits",
                 "Government Benefits",
+                "Formula",
             ]
         )
-        with tabs[0]:
-            Layout.latex_model()
-        with tabs[1]:
-            Layout.controls(sim)
-        with tabs[2]:
-            Layout.forecast_plots(sim)
-        with tabs[3]:
-            Layout.sensitivity_analysis(sim)
 
-        with tabs[4]:
+        with tabs[0]:
+            Layout.controls(sim)
+        with tabs[1]:
+            Layout.forecast_plots(sim)
+        with tabs[2]:
+            Layout.sensitivity_analysis(sim)
+        with tabs[3]:
             Layout.investor_benefits(sim)
-        with tabs[5]:
+        with tabs[4]:
             Layout.community_benefits(sim)
-        with tabs[6]:
+        with tabs[5]:
             Layout.government_benefits(sim)
+        with tabs[6]:
+            Layout.latex_model()
