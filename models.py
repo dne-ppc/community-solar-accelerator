@@ -551,7 +551,6 @@ class FinancialModel(BaseModel):
         
         # Cash flow analysis
         initial_investment = pct(self.initial_private)
-        print(f"Initial Investment (P{percentile}): {initial_investment}")
         returns = pct(self.returns_to_private[:,:self.return_year+1])
         cumulative_returns = np.cumsum(returns)
         
