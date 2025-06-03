@@ -3,26 +3,7 @@
 # Place this file in the same directory as app.py
 
 distributions:
-  # Simulation parameters
-  # - label: "Simulation Years"
-  #   min_value: 1
-  #   p10: 5
-  #   p50: 10
-  #   p90: 15
-  #   max_value: 25
-  #   use_fixed: true
-  #   fixed_value: 25
 
-  # - label: "Private Equity Return Year"
-  #   min_value: 1
-  #   p10: 5
-  #   p50: 10
-  #   p90: 15
-  #   max_value: 25
-  #   use_fixed: true
-  #   fixed_value: 10
-
-  # Equity and seed inputs
 
   - label: "Retail Price (CAD/kWh)"
     min_value: 0.0

@@ -1,0 +1,263 @@
+panel_power:
+  label: "Panel Power Price (W)"
+  min_value: 300
+  p10: 350
+  p50: 400
+  p90: 450
+  max_value: 550
+  use_fixed: false
+  fixed_value: 400
+  step: 25
+  years: 1
+  description: "The power rating of each solar panel in watts. This affects the total energy output of the solar installation."
+  units: "W"
+
+capacity_factor:
+  label: "Capacity Factor (%)"
+  min_value: 10.0
+  p10: 14.0
+  p50: 18.0
+  p90: 21.0
+  max_value: 24.0
+  use_fixed: false
+  fixed_value: 20.0
+  step: 0.1
+  description: "The percentage of time the solar panels are producing energy at their maximum capacity. This is influenced by location, weather, and panel orientation."
+  units: "%"
+
+number_of_panels:
+  label: "Number of Panels (#)"
+  min_value: 10
+  p10: 100
+  p50: 300
+  p90: 2000
+  max_value: 12500
+  use_fixed: false
+  fixed_value: 600
+  step: 10
+  years: 1
+  description: "The total number of solar panels in the installation. This directly affects the total energy output and cost of the project."
+  units: "#"
+
+degradation_rate:
+  label: "Degradation Rate (%)"
+  min_value: 0.0
+  p10: 0.3
+  p50: 0.5
+  p90: 0.7
+  max_value: 1.0
+  use_fixed: false
+  fixed_value: 0.5
+  step: 0.1
+  years: 1
+  description: "The annual decrease in the efficiency of solar panels. A lower degradation rate means the panels will produce energy more efficiently over time."
+  units: "%"
+
+install_cost:
+  label: "Install Cost ($CAD/W)"
+  min_value: 0.01
+  p10: 2.5
+  p50: 3
+  p90: 3.5
+  max_value: 5
+  use_fixed: false
+  fixed_value: 1.0
+  step: 0.1
+  years: 1
+  description: "The cost of installing the solar panels per watt. This includes labor, materials, and other associated costs."
+  units: "CAD/W"
+
+electricity_price:
+  label: "Electricity Price (CAD/kWh)"
+  min_value: 0.01
+  p10: 0.08
+  p50: 0.1
+  p90: 0.12
+  max_value: 0.15
+  use_fixed: false
+  fixed_value: 0.1
+  step: 0.01
+  description: "The price of electricity per kilowatt-hour. This affects the revenue generated from selling excess energy back to the grid."
+  units: "CAD/kWh"
+
+debt_interest_rate:
+  label: "Debt Interest Rate (%)"
+  min_value: 0.0
+  p10: 3.0
+  p50: 4.0
+  p90: 6.0
+  max_value: 10.0
+  use_fixed: false
+  fixed_value: 4.0
+  step: 0.01
+  years: 1
+  description: "The interest rate on any loans taken to finance the solar project. A lower rate reduces the cost of borrowing and increases profitability."
+  units: "%"
+
+capital_return_rate:
+  label: "Capital Return Rate (%)"
+  min_value: 0.0
+  p10: 6.0
+  p50: 7.0
+  p90: 10.0
+  max_value: 12.0
+  use_fixed: true
+  fixed_value: 4.0
+  step: 0.1
+  years: 1
+  description: "The specified return on investment for the capital used in the solar project. This is a key factor in determining the financial viability of the project."
+  units: "%"
+
+capital_return_year:
+  label: "Capital Return Year (#)"
+  min_value: 0.0
+  p10: 6.0
+  p50: 7.0
+  p90: 10.0
+  max_value: 12.0
+  use_fixed: true
+  fixed_value: 4.0
+  step: 0.1
+  years: 1
+  description: "The year in which the capital return is expected to be achieved. This is important for financial planning and cash flow management."
+  units: "#"
+
+dividend_start_year:
+  label: "Dividend Start Year (#)"
+  min_value: 0.0
+  p10: 6.0
+  p50: 7.0
+  p90: 10.0
+  max_value: 12.0
+  use_fixed: true
+  fixed_value: 3.0
+  step: 0.1
+  years: 1
+  description: "The year when dividends are expected to start being paid out to investors. This is crucial for attracting investment and ensuring financial sustainability."
+  units: "#"
+
+inflation_rate:
+  label: "Inflation Rate (%)"
+  min_value: 0.0
+  p10: 1.0
+  p50: 2.0
+  p90: 3.0
+  max_value: 5.0
+  use_fixed: true
+  fixed_value: 2.0
+  step: 0.01
+  years: 1
+  description: "The expected rate of inflation over the project's lifetime. This affects the real value of costs and revenues, impacting overall profitability."
+  units: "%"
+
+admin_rate:
+  label: "Administration Rate (%)"
+  min_value: 0.0
+  p10: 0.3
+  p50: 0.5
+  p90: 0.7
+  max_value: 1.5
+  use_fixed: true
+  fixed_value: 0.5
+  step: 0.01
+  years: 1
+  description: "The amount of administrative costs for the project as a function of capital expenditure. This includes management, legal, and other overhead costs."
+  units: "%"
+
+maintenance_rate:
+  label: "Maintenance Rate (%)"
+  min_value: 0.0
+  p10: 0.3
+  p50: 0.5
+  p90: 0.7
+  max_value: 1.5
+  use_fixed: true
+  fixed_value: 0.5
+  step: 0.01
+  years: 1
+  description: "The annual maintenance costs as a percentage of the total capital expenditure. This includes repairs, cleaning, and other ongoing maintenance activities."
+  units: "%"
+
+discount_rate:
+  label: "Discount Rate (%)"
+  min_value: 0.0
+  p10: 3.0
+  p50: 4.0
+  p90: 6.0
+  max_value: 10.0
+  use_fixed: true
+  fixed_value: 4.0
+  step: 0.01
+  years: 1
+  description: "The discount rate used for calculating the present value of future cash flows. This is important for assessing the financial viability of the project over time."
+  units: "%"
+
+insurance_rate:
+  label: "Insurance Rate (%)"
+  min_value: 0.0
+  p10: 0.3
+  p50: 0.5
+  p90: 0.7
+  max_value: 1.5
+  use_fixed: true
+  fixed_value: 0.2
+  step: 0.01
+  years: 1
+  description: "The cost of insurance for the solar project as a percentage of the total capital expenditure. This covers risks such as damage, theft, and liability."
+  units: "%"
+
+# public_investment:
+#   label: "Public Investment ($)"
+#   min_value: 0
+#   p10: 100_000
+#   p50: 1_000_000
+#   p90: 2_000_000
+#   max_value: 10_000_000
+#   use_fixed: true
+#   fixed_value: 1_000_000
+#   step: 1000
+#   years: 1
+#   description: "The amount of public funding or investment allocated to the solar project. This can come from government grants, subsidies, or other public sources."
+#   units: "$ CAD"
+
+# private_investment:
+#   label: "Private Investment ($)"
+#   min_value: 0
+#   p10: 100_000
+#   p50: 1_000_000
+#   p90: 2_000_000
+#   max_value: 10_000_000
+#   use_fixed: true
+#   fixed_value: 1_000_000
+#   step: 1000
+#   years: 1
+#   description: "The amount of private funding or investment allocated to the solar project. This can come from private investors, venture capital, or other private sources."
+#   units: "$ CAD"
+
+public_funding_percent:
+  label: "Public Funding Percentage (%)"
+  min_value: 0.0
+  p10: 10.0
+  p50: 20.0
+  p90: 30.0
+  max_value: 100.0
+  use_fixed: false
+  fixed_value: 20.0
+  step: 1.0
+  years: 1
+  description: "The percentage of the total project cost that is covered by public funding or investment. This can significantly affect the financial viability of the project."
+  units: "%"
+
+funding_buffer_percent:
+  label: "Funding Buffer Percentage (%)"
+  min_value: 0.0
+  p10: 5.0
+  p50: 10.0
+  p90: 15.0
+  max_value: 20.0
+  use_fixed: false
+  fixed_value: 10.0
+  step: 1.0
+  years: 1
+  description: "The percentage of the total project cost set aside as a buffer for unexpected expenses or cost overruns. This helps ensure the project remains financially viable."
+  units: "%"

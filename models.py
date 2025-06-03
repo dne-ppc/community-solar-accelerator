@@ -1,5 +1,7 @@
 # models.py
-from typing import Dict, List, Optional, TypeVar, Any, Tuple
+from typing import Dict, List, Optional, TypeVar, Any, Tuple, Union
+from __future__ import annotations
+
 from io import StringIO
 import numpy as np
 import pandas as pd
@@ -9,8 +11,8 @@ from pydantic import BaseModel, Field, field_validator
 from metalog import metalog
 import yaml
 import numpy_financial as npf
-# from numpy_financial import ppmt, ipmt
 
+# from numpy_financial import ppmt, ipmt
 
 
 PandasDataFrame = TypeVar("pandas.core.frame.DataFrame")
@@ -19,20 +21,101 @@ NdArray = TypeVar("numpy.ndarray")
 np.float_ = np.float64
 
 
-class Distribution(BaseModel):
+class ModelOutput(BaseModel):
+    """
+    Holds the outputs of a single scenario, with metadata and a NumPy array.
+    """
+    scenario: str
+    label: str
+    description: Optional[str] = None
+    units: Optional[str] = None
+    data: NdArray
+
+    def __array__(self, dtype=None) -> NdArray:
+        """
+        Allow np.asarray(model_output) → model_output.data
+        """
+        return np.asarray(self.data, dtype=dtype)
+
+    def __getitem__(self, idx):
+        """
+        Enable indexing: model_output[i] → model_output.data[i]
+        """
+        return self.data[idx]
+
+    def __add__(self, other: Union[ModelOutput, NdArray]) -> NdArray:
+        """
+        Add two ModelOutput instances (element-wise) or add a NumPy array.
+        """
+        if isinstance(other, ModelOutput):
+            return self.data + other.data
+        elif isinstance(other, np.ndarray):
+            return self.data + other
+        else:
+            raise TypeError("Unsupported type for addition. Must be ModelOutput or NdArray.")
+
+    def __sub__(self, other: Union[ModelOutput, NdArray]) -> NdArray:
+        """
+        Subtract two ModelOutput instances (element-wise) or subtract a NumPy array.
+        """
+        if isinstance(other, ModelOutput):
+            return self.data - other.data
+        elif isinstance(other, np.ndarray):
+            return self.data - other
+        else:
+            raise TypeError("Unsupported type for subtraction. Must be ModelOutput or NdArray.")
+
+    def __mul__(self, other: Union[ModelOutput, NdArray]) -> NdArray:
+        """
+        Multiply two ModelOutput instances (element-wise) or multiply by a NumPy array.
+        """
+        if isinstance(other, ModelOutput):
+            return self.data * other.data
+        elif isinstance(other, np.ndarray):
+            return self.data * other
+        else:
+            raise TypeError("Unsupported type for multiplication. Must be ModelOutput or NdArray.")
+
+    def __truediv__(self, other: Union[ModelOutput, NdArray, float, int]) -> NdArray:
+        """
+        Divide two ModelOutput instances (element-wise), or divide by a NumPy array, float, or int.
+        """
+        if isinstance(other, ModelOutput):
+            return self.data / other.data
+        elif isinstance(other, np.ndarray):
+            return self.data / other
+        elif isinstance(other, (float, int)):
+            return self.data / other
+        else:
+            raise TypeError("Unsupported type for division. Must be ModelOutput, NdArray, float, or int.")
+
+
+class ModelInput(BaseModel):
     """
     Stores the basic configuration for a single parameter's Metalog distribution.
     For example: Price of Gasoline ($/L), with min_value, max_value, p10, p50, p90, etc.
     """
 
-    label: str
+    scenario: str = Field(default="default", description="Scenario name for this input")
+    label: str 
     min_value: float | int
     max_value: float | int
     p10: float | int
     p50: float | int
     p90: float | int
-    step: float | int
+    step: float | int = Field(
+        default=0.01,
+        description="Step size for sliders in Streamlit UI",
+    )
     boundedness: str = "b"  # 'b' for two-sided bounding in metalog
+
+    years: int = 25
+    iterations: int = 1000
+
+    description: str | None = None
+    units: str | None = None
+
+    data: NdArray = None
 
     use_fixed: bool = Field(default=False, description="Override to a fixed constant?")
     fixed_value: bool | int | float = Field(
@@ -40,13 +123,102 @@ class Distribution(BaseModel):
         description="If use_fixed is True, draw every sample from this value",
     )
 
-    def create_data(
+    def __init__(
         self,
-        iterations: int,
-        years: int,
         sensitivity_param: Optional[str] = None,
         sensitivity_value: Optional[float] = None,
-    ) -> np.ndarray:
+        **data: Any,
+    ) -> None:
+        super().__init__(**data)
+
+        if "data" not in data:
+            self.data = self.create_data(
+                sensitivity_param=sensitivity_param,
+                sensitivity_value=sensitivity_value,
+            )
+
+    def __getitem__(self, key):
+        return self.data[key]
+
+    def __array__(self, dtype=None):
+        # so that np.asarray(mi) → mi.data, and ufuncs see it as raw array
+        return np.asarray(self.data, dtype=dtype)
+
+    def __add__(self, other: "ModelInput" | NdArray) -> NdArray:
+        """
+        Add two ModelInput instances together.
+        """
+        if isinstance(other, ModelInput):
+
+            return self.data + other.data
+        elif isinstance(other, np.ndarray):
+            return self.data + other
+        else:
+            raise TypeError(
+                "Unsupported type for addition. Must be ModelInput or NdArray."
+            )
+
+    def __sub__(self, other: "ModelInput" | NdArray) -> NdArray:
+        """
+        Subtract two ModelInput instances.
+        """
+        if isinstance(other, ModelInput):
+            return self.data - other.data
+        elif isinstance(other, np.ndarray):
+            return self.data - other
+        else:
+            raise TypeError(
+                "Unsupported type for subtraction. Must be ModelInput or NdArray."
+            )
+
+    def __mul__(self, other: "ModelInput" | NdArray) -> NdArray:
+        """
+        Multiply two ModelInput instances.
+        """
+        if isinstance(other, ModelInput):
+            return self.data * other.data
+        elif isinstance(other, np.ndarray):
+            return self.data * other
+        else:
+            raise TypeError(
+                "Unsupported type for multiplication. Must be ModelInput or NdArray."
+            )
+
+    def __truediv__(self, other: "ModelInput" | NdArray) -> NdArray:
+        """
+        Divide two ModelInput instances.
+        """
+        if isinstance(other, ModelInput):
+
+            return self.data / other.data
+        elif isinstance(other, np.ndarray):
+            return self.data / other
+        elif isinstance(other, float):
+            return self.data / other
+        elif isinstance(other, int):
+            return self.data / other
+        else:
+            raise TypeError(
+                "Unsupported type for division. Must be ModelInput or NdArray."
+            )
+
+    @classmethod
+    def from_config(cls, scenario, name, config_path: str = "inputs.yaml", **data):
+        with open(config_path, "r") as f:
+            cfg: Dict[str, Any] = yaml.safe_load(f)
+
+        settings: Dict[str, Any] = cfg.get(name)
+        settings["scenario"] = scenario
+        if 'years' in settings:
+            data.pop('years', None) 
+        settings.update(data)
+        return cls(**settings)
+
+    def create_data(
+        self,
+        sensitivity_param: Optional[str] = None,
+        sensitivity_value: Optional[float] = None,
+    ) -> NdArray:
         """
         Draws samples for `iterations` × (`years` + 1).
         Priority:
@@ -54,7 +226,7 @@ class Distribution(BaseModel):
           2) Else if use_fixed=True and fixed_value is set → full constant array of fixed_value.
           3) Otherwise sample from Metalog as before.
         """
-        shape = (iterations, years + 1)
+        shape = (self.iterations, self.years)
 
         # 1) Sensitivity‐analysis override
         if sensitivity_param == self.label and sensitivity_value is not None:
@@ -77,8 +249,9 @@ class Distribution(BaseModel):
             term_limit=3,
             probs=[0.1, 0.5, 0.9],
         )
-        values = metalog.r(dist, n=iterations * (years + 1))
-        return values.reshape(shape)
+        values:np.ndarray = metalog.r(dist, n=self.iterations * (self.years))
+    
+        return values.reshape(shape).clip(self.min_value, self.max_value)
 
     def create_controls(self) -> None:
         """
@@ -106,16 +279,16 @@ class Distribution(BaseModel):
             )
         else:
             # Original P10/P50/P90 controls
-            p10_key = f"{self.label}_low"
-            p50_key = f"{self.label}_medium"
-            p90_key = f"{self.label}_high"
+            p_low_key = f"{self.label}_low"
+            p_med_key = f"{self.label}_medium"
+            p_high_key = f"{self.label}_high"
             col1, col2, col3 = container.columns(3)
             with col1:
-                low_val = col1.number_input("P10", value=self.p10, key=p10_key)
+                low_val = col1.number_input("P10", value=self.p10, key=p_low_key)
             with col2:
-                med_val = col2.number_input("P50", value=self.p50, key=p50_key)
+                med_val = col2.number_input("P50", value=self.p50, key=p_med_key)
             with col3:
-                high_val = col3.number_input("P90", value=self.p90, key=p90_key)
+                high_val = col3.number_input("P90", value=self.p90, key=p_high_key)
 
             self.p10 = low_val
             self.p50 = med_val
@@ -227,8 +400,6 @@ class FinancialModel(BaseModel):
         default=10, description="Term (years) for loan amortization"
     )
 
-
-
     def run_simulation(self, inputs: Dict[str, np.ndarray]):
         n_iter = inputs["Public Seed Grant (CAD)"].shape[0]
         Y = self.years
@@ -277,8 +448,8 @@ class FinancialModel(BaseModel):
             cash += interest_income_t
             # --- Project and financing ---
             desired = inputs["Projects per Year"][:, t].astype(int)
-            size_t = inputs["Project Size (kW)"][:, t] 
-            cost_kw = inputs["Installed Cost (CAD/W)"][:, t] *1000
+            size_t = inputs["Project Size (kW)"][:, t]
+            cost_kw = inputs["Installed Cost (CAD/W)"][:, t] * 1000
             df_t = inputs.get("Debt Financing (%)")[:, t] / 100
             int_rate = inputs.get("Debt Interest Rate (%)")[:, t] / 100
             payout_rate = inputs.get("Target Investor Return (%)")[:, t] / 100
@@ -319,7 +490,7 @@ class FinancialModel(BaseModel):
 
             # maximum cash you’re willing to put up for equity share of debt projects
             # (e.g. if df_t = 0.01, only 1% of your equity can be used to support debt)
-            debt_capacity_cash = equity_available * df_t          # shape (n_iter,)
+            debt_capacity_cash = equity_available * df_t  # shape (n_iter,)
 
             # cost per project that *equity* must cover
             # (since debt_cost = portfolio_cost * df_t,
@@ -328,7 +499,7 @@ class FinancialModel(BaseModel):
 
             # how many projects you can debt‐finance given that capacity
             max_debt_projects = np.floor(debt_capacity_cash / equity_cost).astype(int)
-            max_debt_projects = np.clip(max_debt_projects, 0, None)   # no negatives
+            max_debt_projects = np.clip(max_debt_projects, 0, None)  # no negatives
 
             # number of projects still “desired” after pure equity financing
             remaining_projects = (desired - eq_projects).clip(0, None)
@@ -362,7 +533,6 @@ class FinancialModel(BaseModel):
             private_balance -= draw_priv
             remaining -= draw_priv
 
-
             for project_year in range(t + 1):
                 if project_year <= self.debt_term_years:
                     principal = npf.ppmt(
@@ -372,7 +542,6 @@ class FinancialModel(BaseModel):
                         pv=new_debt,
                     )
                     principal_repayment[:, t] += principal
-
 
             # Update debt balance
             debt_balance[:, t] = (
@@ -399,8 +568,6 @@ class FinancialModel(BaseModel):
             cumulative_capex = np.sum(capex[:, :t], axis=1)
             depreciation_expense[:, t] = cumulative_capex / self.useful_life_years
 
-            
-
             dtl_t = np.zeros_like(deferred_tax_liability[:, t])
             for i in range(t + 1):
                 # capex of vintage i
@@ -414,7 +581,6 @@ class FinancialModel(BaseModel):
                 dtl_t += (tax_depr_cum - book_depr_cum) * tax_rate
 
             deferred_tax_liability[:, t] = dtl_t
-
 
             # 2) deferred‑tax amortization (the “deferred” portion of tax expense) is just the reversal of DTL:
             if t == 0:
@@ -516,16 +682,13 @@ class FinancialModel(BaseModel):
 
         expenses = opex + depr + intl + tax
         assets = self.assets
-        
 
         equity = self.public_equity_balance + self.private_equity_balance
 
         liab = assets - equity
 
-
         # 2) Build composite percentiles:
         #    Note: we *subtract/add* the matching percentile arrays.
-
 
         # 3) Assemble into the same summary format:
         summary = {
@@ -543,87 +706,96 @@ class FinancialModel(BaseModel):
         }
 
         return summary
-    
+
     def get_investor_dashboard(self, percentile: int = 50) -> Dict[str, Any]:
         """Enhanced investor-focused metrics and visualizations"""
+
         def pct(arr):
             return np.percentile(arr, [percentile], axis=0)[0]
-        
+
         # Cash flow analysis
         initial_investment = pct(self.initial_private)
-        returns = pct(self.returns_to_private[:,:self.return_year+1])
+        returns = pct(self.returns_to_private[:, : self.return_year + 1])
         cumulative_returns = np.cumsum(returns)
-        
+
         # Create cash flow chart
         fig_cashflow = go.Figure()
-        fig_cashflow.add_trace(go.Bar(
-            x=list(range(self.return_year+1)),
-            y=returns,
-            name='Annual Returns'
-        ))
-        fig_cashflow.add_trace(go.Scatter(
-            x=list(range(self.return_year+1)),
-            y=cumulative_returns,
-            name='Cumulative Returns',
-            line=dict(color='red', width=2)
-        ))
+        fig_cashflow.add_trace(
+            go.Bar(
+                x=list(range(self.return_year + 1)), y=returns, name="Annual Returns"
+            )
+        )
+        fig_cashflow.add_trace(
+            go.Scatter(
+                x=list(range(self.return_year + 1)),
+                y=cumulative_returns,
+                name="Cumulative Returns",
+                line=dict(color="red", width=2),
+            )
+        )
         fig_cashflow.update_layout(
-            title=f'Investor Cash Flows (P{percentile})',
-            xaxis_title='Year',
-            yaxis_title='CAD',
-            hovermode='x unified'
+            title=f"Investor Cash Flows (P{percentile})",
+            xaxis_title="Year",
+            yaxis_title="CAD",
+            hovermode="x unified",
         )
         st.plotly_chart(fig_cashflow, use_container_width=True)
-        
+
         # Risk metrics
         total_return = cumulative_returns[-1]
         irr = npf.irr([-initial_investment] + list(returns)) * 100
         multiple = total_return / initial_investment
 
-        metrics= pd.Series({
-                'Initial Investment (CAD)': initial_investment,
-                'Total Return (CAD)': total_return,
-                'Multiple (x)': multiple,
-                'IRR (%)': irr,
-                'Payback Period (years)': np.argmax(cumulative_returns >= initial_investment) + 1
+        metrics = pd.Series(
+            {
+                "Initial Investment (CAD)": initial_investment,
+                "Total Return (CAD)": total_return,
+                "Multiple (x)": multiple,
+                "IRR (%)": irr,
+                "Payback Period (years)": np.argmax(
+                    cumulative_returns >= initial_investment
+                )
+                + 1,
             }
         )
 
         df = metrics.to_frame(name=f"P{pct}").rename_axis("Metric")
         st.dataframe(df.style.format("{:,.2f}"), use_container_width=False)
 
-
     def get_government_dashboard(self, percentile: int = 50) -> Dict[str, Any]:
         """Enhanced government-focused metrics and visualizations"""
+
         def pct(arr):
             return np.percentile(arr, [percentile], axis=0)[0]
-        
+
         public_grant = pct(self.initial_public)
         total_capacity = pct(self.total_capacity)[-1]
         total_projects = pct(self.total_projects)[-1]
         community_savings = pct(self.community_savings)[-1]
-        
+
         # Capacity deployment chart
         fig_capacity = go.Figure()
-        fig_capacity.add_trace(go.Scatter(
-            x=list(range(self.years)),
-            y=pct(self.total_capacity),
-            name='Cumulative Capacity',
-            line=dict(color='green', width=2)
-        ))
-        
+        fig_capacity.add_trace(
+            go.Scatter(
+                x=list(range(self.years)),
+                y=pct(self.total_capacity),
+                name="Cumulative Capacity",
+                line=dict(color="green", width=2),
+            )
+        )
+
         # Leverage metrics
         total_capex = pct(self.capex).sum()
         leverage_multiple = total_capex / public_grant
-        
 
-        metrics= pd.Series({
-                'Public Grant (CAD)': public_grant,
-                'Total Capacity Deployed (kW)': total_capacity,
-                'Total Projects Built': total_projects,
-                'Total Community Savings (CAD)': community_savings,
-                'Capex Leverage Multiple (x)': leverage_multiple,
-                'kW per $ Public Grant': total_capacity / public_grant * 1000,
+        metrics = pd.Series(
+            {
+                "Public Grant (CAD)": public_grant,
+                "Total Capacity Deployed (kW)": total_capacity,
+                "Total Projects Built": total_projects,
+                "Total Community Savings (CAD)": community_savings,
+                "Capex Leverage Multiple (x)": leverage_multiple,
+                "kW per $ Public Grant": total_capacity / public_grant * 1000,
                 # 'Estimated Jobs Created': total_projects * 2.5  # Example job multiplier
             }
         )
@@ -636,7 +808,7 @@ class Simulation(BaseModel):
     years: int = Field(default=25, description="Number of years to simulate")
     return_year: int = Field(default=10, description="Years to return private equity")
     iterations: int = Field(default=1000, description="Monte Carlo iterations per run")
-    distributions: Dict[str, Distribution] = Field(default_factory=dict)
+    distributions: Dict[str, ModelInput] = Field(default_factory=dict)
     samples: Dict[str, NdArray] = Field(default_factory=dict)
     model: FinancialModel = Field(None)
     summary: Dict[str, PandasDataFrame] = Field(default_factory=dict)
@@ -653,7 +825,7 @@ class Simulation(BaseModel):
             cfg = yaml.safe_load(f)
         self.years = cfg.get("years", self.years)
         for dist_cfg in cfg.get("distributions", []):
-            dist = Distribution(**dist_cfg)
+            dist = ModelInput(**dist_cfg)
             self.distributions[dist.label] = dist
         self.model = FinancialModel()
 
