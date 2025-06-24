@@ -12,3 +12,4 @@ scipy
 pyyaml
 tabulate
 numpy-financial
+graphviz

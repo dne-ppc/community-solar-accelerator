@@ -1,6 +1,6 @@
 import streamlit as st
-from layout import Layout
-from models import Simulation
+# from layout import Layout
+from models.solar import SolarSimulator
 
 
 st.set_page_config(
@@ -11,8 +11,8 @@ st.markdown(
     """
     <style>
     [data-testid="stSidebar"][aria-expanded="true"]{
-        min-width: 450px;
-        max-width: 800px;
+        min-width: 500px;
+        max-width: 700px;
     }
     </style>
     """,
@@ -21,7 +21,9 @@ st.markdown(
 
 
 if "simulation" not in st.session_state:
-    st.session_state.simulation = Simulation()
+    st.session_state.simulation = SolarSimulator()
 
 
-Layout.create_tabs()
+st.session_state.simulation.sidenav()
+st.session_state.simulation.tabs()
+

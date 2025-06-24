@@ -1,0 +1,29 @@
+max_projects_per_year:
+  description: The maximum number of projects that can be undertaken in a year. This is important for resource allocation and project management.
+  fixed_value: 2
+  label:  "Max Projects Per Year (#)"
+  max_value: 10
+  min_value: 0
+  p10: 1
+  p50: 3
+  p90: 5
+  scenario: Fixed
+  step: 1
+  units: '#'
+  use_fixed: false
+  years: 1
+
+total_public_funding:
+  description: "The total amount of public funding available for the project. This is crucial for determining the financial feasibility and sustainability of the project."
+  fixed_value: 10_000_000
+  label: "Total Public Funding ($)"
+  max_value: 50_000_000
+  min_value: 1_000_000
+  p10: 2_000_000
+  p50: 5_000_000
+  p90: 10_000_000
+  scenario: Fixed
+  step: 100000
+  units: '$'
+  use_fixed: true
+  years: 1
