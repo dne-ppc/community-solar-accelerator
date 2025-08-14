@@ -1,0 +1,44 @@
+# d600_fixed.yaml
+consumption:
+  description: Total kWh consumption
+  label: Consumption (kWh)
+  units: kWh
+  fixed_value: FIXED_VALUE
+  p10: P10
+  p50: P50
+  p90: P90
+  use_fixed: true
+  years: 1
+
+days:
+  description: Billing period length
+  label: Days
+  units: days
+  fixed_value: FIXED_VALUE
+  p10: P10
+  p50: P50
+  p90: P90
+  use_fixed: true
+  years: 1
+
+service_charge:
+  description: Service charge ($/day)
+  label: Service Charge
+  units: $CAD/day
+  fixed_value: FIXED_VALUE
+  p10: P10
+  p50: P50
+  p90: P90
+  use_fixed: true
+  years: 1
+
+energy_charge:
+  description: Energy charge ($/kWh)
+  label: Energy Charge
+  units: $CAD/kWh
+  fixed_value: FIXED_VALUE
+  p10: P10
+  p50: P50
+  p90: P90
+  use_fixed: true
+  years: 1

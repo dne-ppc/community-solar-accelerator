@@ -1,0 +1,120 @@
+# d300_fixed.yaml
+consumption:
+  description: Total energy consumption in the billing period
+  label: Consumption (kWh)
+  units: kWh
+  fixed_value: 8000
+  min_value: 5000
+  max_value: 20000
+  p10: 5500
+  p50: 8000
+  p90: 15000
+  scenario: Fixed
+  step: 1
+  use_fixed: true
+  years: 1
+
+billing_demand:
+  description: Billing demand in the period (kVA) for demand charges
+  label: Billing Demand (kVA)
+  units: kVA
+  fixed_value: 100
+  min_value: 0
+  max_value: 150
+  p10: 50
+  p50: 100
+  p90: 150
+  scenario: Fixed
+  step: 1
+  use_fixed: true
+  years: 1
+
+days:
+  description: Number of days in the billing period
+  label: Billing Period Days
+  units: days
+  fixed_value: 30
+  min_value: 28
+  max_value: 31
+  p10: 28
+  p50: 30
+  p90: 31
+  scenario: Fixed
+  step: 1
+  use_fixed: true
+  years: 1
+
+service_charge:
+  description: Flat service charge per day under D300
+  label: Service Charge ($/day)
+  units: $CAD/day
+  fixed_value: 9.591923
+  min_value: 0.0
+  max_value: 20.0
+  p10: 9.591923
+  p50: 9.591923
+  p90: 9.591923
+  scenario: Fixed
+  step: 0.000001
+  use_fixed: true
+  years: 1
+
+facilities_charge:
+  description: Facilities charge per day per kVA under D300
+  label: Facilities Charge ($/day per kVA)
+  units: $CAD/(day·kVA)
+  fixed_value: 0.065117
+  min_value: 0.0
+  max_value: 1.0
+  p10: 0.065117
+  p50: 0.065117
+  p90: 0.065117
+  scenario: Fixed
+  step: 0.000001
+  use_fixed: true
+  years: 1
+
+nonratchet_demand_charge:
+  description: Non-ratchet demand charge per day per kVA under D300
+  label: Non-Ratchet Demand Charge ($/day per kVA)
+  units: $CAD/(day·kVA)
+  fixed_value: 0.062763
+  min_value: 0.0
+  max_value: 1.0
+  p10: 0.062763
+  p50: 0.062763
+  p90: 0.062763
+  scenario: Fixed
+  step: 0.000001
+  use_fixed: true
+  years: 1
+
+transmission_demand_charge:
+  description: Transmission demand charge per day per kVA under D300
+  label: Transmission Demand Charge ($/day per kVA)
+  units: $CAD/(day·kVA)
+  fixed_value: 0.266159
+  min_value: 0.0
+  max_value: 1.0
+  p10: 0.266159
+  p50: 0.266159
+  p90: 0.266159
+  scenario: Fixed
+  step: 0.000001
+  use_fixed: true
+  years: 1
+
+variable_charge:
+  description: Variable charge per kWh under D300
+  label: Variable Charge ($/kWh)
+  units: $CAD/kWh
+  fixed_value: 0.009162
+  min_value: 0.0
+  max_value: 0.05
+  p10: 0.009162
+  p50: 0.009162
+  p90: 0.009162
+  scenario: Fixed
+  step: 0.000001
+  use_fixed: true
+  years: 1

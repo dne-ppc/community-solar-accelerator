@@ -1,12 +1,12 @@
 from typing import TypeVar
 from pydantic import computed_field
-from models.base import ModelInput, ModelOutput, ModelCalculation, FinancialModel
+from models.core.types import ModelInput, ModelOutput, ModelCalculation
+from models.financial import FinancialModel
 import numpy as np
 import pandas as pd
 import numpy_financial as npf
 import streamlit as st
 
-from models.simulation import Simulation
 
 PandasDataFrame = TypeVar("pandas.core.frame.DataFrame")
 NdArray = TypeVar("numpy.ndarray")
@@ -15,82 +15,20 @@ np.float_ = np.float64
 HOURS_PER_YEAR = 8766
 
 
-class SystemOutputCalcMixin:
-
-    panel_power: ModelInput
-    number_of_panels: ModelInput
-
-    @computed_field
-    @property
-    def system_output(self) -> ModelCalculation:
-        """
-        Total system output in kWh per year:
-        panel_power (W) * number_of_panels * capacity_factor (%) * HOURS_PER_YEAR, divided by 1000.
-        """
-        arr = (
-            self.panel_power
-            * self.number_of_panels
-            * (self.capacity_factor / 100)
-            * HOURS_PER_YEAR
-            / 1000
-        )
-        return ModelCalculation(
-            scenario=self.scenario,
-            label="system_output",
-            description="Annual system output (kWh)",
-            units="kWh",
-            data=arr,
-        )
-
-    @computed_field
-    @property
-    def capex(self) -> ModelOutput:
-        """
-        Capital expenditure (CAPEX) as install_cost ($/W) * panel_power (W) * number_of_panels.
-        """
-        arr = self.install_cost * self.panel_power * self.number_of_panels
-        return ModelOutput(
-            scenario=self.scenario,
-            label="CAPEX ($CAD)",
-            description="Capital expenditure",
-            units="$CAD",
-            data=arr,
-        )
-
-
-class SystemInputMixin:
-
-    system_output: ModelInput
-
-    @computed_field
-    @property
-    def capex(self) -> ModelOutput:
-        """
-        Capital expenditure (CAPEX) as install_cost ($/W) * panel_power (W) * number_of_panels.
-        """
-        arr = self.install_cost * (
-            self.system_output / HOURS_PER_YEAR / (self.capacity_factor / 100)
-        )
-        return ModelOutput(
-            scenario=self.scenario,
-            label="CAPEX ($CAD)",
-            description="Capital expenditure",
-            units="$CAD",
-            data=arr,
-        )
-
-
 class SolarProject(FinancialModel):
 
-    capacity_factor: ModelInput
+    # capacity_factor: ModelInput
+    capex: ModelInput
     degradation_rate: ModelInput
-    install_cost: ModelInput
+    # install_cost: ModelInput
+    # production: ModelInput
 
     public_funding_percent: ModelInput
     funding_buffer_percent: ModelInput
     itc_rate: ModelInput
     itc_year: ModelInput
     start_year_proportion: ModelInput
+    
 
     electricity_price: ModelInput
     inflation_rate: ModelInput
@@ -107,27 +45,28 @@ class SolarProject(FinancialModel):
 
     system_output: ModelInput
 
+
     # TODO
     # commissioning_fraction: ModelInput  # (or just a float, but ModelInput is more flexible)
 
-    @computed_field
-    @property
-    def capex(self) -> ModelOutput:
-        """
-        Capital expenditure (CAPEX) as install_cost ($/W) * panel_power (W) * number_of_panels.
-        """
-        arr = (
-            self.install_cost
-            * (self.system_output / HOURS_PER_YEAR / (self.capacity_factor / 100))
-            * 1000
-        )
-        return ModelOutput(
-            scenario=self.scenario,
-            label="CAPEX ($CAD)",
-            description="Capital expenditure",
-            units="$CAD",
-            data=arr,
-        )
+    # @computed_field
+    # @property
+    # def capex(self) -> ModelOutput:
+    #     """
+    #     Capital expenditure (CAPEX) as install_cost ($/W) * panel_power (W) * number_of_panels.
+    #     """
+    #     arr = (
+    #         self.install_cost
+    #         * (self.system_output / HOURS_PER_YEAR / (self.capacity_factor / 100))
+    #         * 1000
+    #     )
+    #     return ModelOutput(
+    #         scenario=self.scenario,
+    #         label="CAPEX ($CAD)",
+    #         description="Capital expenditure",
+    #         units="$CAD",
+    #         data=arr,
+    #     )
 
     @computed_field
     @property
@@ -205,32 +144,6 @@ class SolarProject(FinancialModel):
             units="kWh",
             data=arr,
         )
-
-    # TODO Update all capex derived calcs with similar logic
-    # @computed_field
-    # @property
-    # def production(self) -> ModelCalculation:
-    #     """
-    #     Annual energy production (kWh): system_output * degradation_schedule,
-    #     with year 0 scaled by commissioning_fraction.
-    #     """
-    #     arr = self.system_output * self.degradation_schedule  # shape: (iterations, years)
-
-    #     # Scale year 0 by commissioning_fraction, all other years by 1.0
-    #     # commissioning_fraction: shape (iterations, 1) or (iterations,)
-    #     frac = np.asarray(self.commissioning_fraction.data).reshape(-1, 1)
-    #     scale = np.ones(arr.shape)
-    #     scale[:, 0] = frac[:, 0]  # Apply fraction only to year 0
-
-    #     arr = arr * scale
-
-    #     return ModelCalculation(
-    #         scenario=self.scenario,
-    #         label="production",
-    #         description="Annual energy produced (with partial Year 0)",
-    #         units="kWh",
-    #         data=arr,
-    #     )
 
     @computed_field
     @property
@@ -952,6 +865,7 @@ class SolarProject(FinancialModel):
             data=credits,
         )
 
+
     def iteration_summary(self) -> None:
 
         iteration = st.number_input(
@@ -960,7 +874,7 @@ class SolarProject(FinancialModel):
             max_value=self.iterations - 1,
             value=0,
             step=1,
-            help="Select the iteration to view detailed financials.",)
+            help="Select the iteration to view detailed financials.")
 
         investment = pd.DataFrame(
             data=[
@@ -1084,7 +998,7 @@ class SolarProject(FinancialModel):
         annual = annual[['Total'] + list(cols)]
 
 
-        col1,col2,col3 = st.columns(3)
+        col1,col2,col3,col4 = st.columns(4)
 
         with col1:
             st.subheader("Investment Assumptions")
@@ -1097,13 +1011,15 @@ class SolarProject(FinancialModel):
             st.subheader("Cost Assumptions")
             st.dataframe(costs.round(2))
 
+        with col4:
+
+            st.subheader("Net Present Value")
+            st.dataframe(npv.round(0))
+
         st.subheader("Annual Financials")
         st.dataframe(annual.round(0),height=500)
 
-        col1,col2,_ = st.columns(3)
 
-        st.subheader("Net Present Value")
-        st.dataframe(npv.round(0))
 
     @computed_field
     @property
@@ -1144,8 +1060,3 @@ class SolarProject(FinancialModel):
             units="$CAD",
             data=free,
         )
-
-class SolarSimulator(Simulation):
-
-
-    _model_type = SolarProject

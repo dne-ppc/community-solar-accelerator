@@ -13,6 +13,36 @@ system_output:
   units: "kWh"
   scenario: Base
 
+capex:
+  label: "Capital Expenditure (CapEx) ($CAD)"
+  min_value: 1000
+  p10: 5000
+  p50: 100_000
+  p90: 500_000
+  max_value: 5_000_000
+  use_fixed: false
+  fixed_value: 100_000
+  step: 1000
+  years: 1
+  description: "The total capital expenditure for the solar project, including installation and equipment costs."
+  units: "$CAD"
+  scenario: Base
+
+production:
+  label: "Annual Production (kWh)"
+  min_value: 20_000
+  p10: 30_000
+  p50: 75_000
+  p90: 200_000
+  max_value: 1_000_000
+  use_fixed: false
+  fixed_value: 75_000
+  step: 1000
+  years: 1
+  description: "The system output during year 0"
+  units: "kWh"
+  scenario: Base
+
 panel_power:
   label: "Panel Power (W)"
   min_value: 300

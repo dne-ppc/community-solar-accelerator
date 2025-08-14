@@ -1,6 +1,7 @@
 import streamlit as st
 # from layout import Layout
-from models.solar import SolarSimulator
+from models.portfolio import CommunityPortfolio
+from models.solar import SolarProject
 
 
 st.set_page_config(
@@ -20,10 +21,16 @@ st.markdown(
 )
 
 
-if "simulation" not in st.session_state:
-    st.session_state.simulation = SolarSimulator()
+# if "portfolio" not in st.session_state:
+#     st.session_state.portfolio = CommunityPortfolio()
 
 
-st.session_state.simulation.sidenav()
-st.session_state.simulation.tabs()
+# # st.session_state.simulation.sidenav()
+# st.session_state.portfolio.layout()
 
+if "project" not in st.session_state:
+    st.session_state.project = SolarProject()
+
+
+# st.session_state.simulation.sidenav()
+st.session_state.project.layout()

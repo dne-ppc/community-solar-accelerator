@@ -1,0 +1,75 @@
+# d200_fixed.yaml
+consumption:
+  description: Total energy consumption in the billing period
+  label: Consumption (kWh)
+  units: kWh
+  fixed_value: 4000
+  min_value: 0
+  max_value: 5000
+  p10: 1000
+  p50: 4000
+  p90: 4900
+  scenario: Fixed
+  step: 1
+  use_fixed: true
+  years: 1
+
+days:
+  description: Number of days in the billing period
+  label: Billing Period Days
+  units: days
+  fixed_value: 30
+  min_value: 28
+  max_value: 31
+  p10: 28
+  p50: 30
+  p90: 31
+  scenario: Fixed
+  step: 1
+  use_fixed: true
+  years: 1
+
+service_facility_charge:
+  description: Service & facilities charge per day under D200
+  label: Service & Facilities Charge ($/day)
+  units: $CAD/day
+  fixed_value: 1.725485
+  min_value: 0.0
+  max_value: 5.0
+  p10: 1.725485
+  p50: 1.725485
+  p90: 1.725485
+  scenario: Fixed
+  step: 0.000001
+  use_fixed: true
+  years: 1
+
+usage_charge:
+  description: System usage charge per kWh under D200
+  label: System Usage Charge ($/kWh)
+  units: $CAD/kWh
+  fixed_value: 0.012953
+  min_value: 0.0
+  max_value: 0.05
+  p10: 0.012953
+  p50: 0.012953
+  p90: 0.012953
+  scenario: Fixed
+  step: 0.000001
+  use_fixed: true
+  years: 1
+
+transmission_charge:
+  description: Transmission variable charge per kWh under D200
+  label: Transmission Charge ($/kWh)
+  units: $CAD/kWh
+  fixed_value: 0.030251
+  min_value: 0.0
+  max_value: 0.1
+  p10: 0.030251
+  p50: 0.030251
+  p90: 0.030251
+  scenario: Fixed
+  step: 0.000001
+  use_fixed: true
+  years: 1

@@ -1,0 +1,132 @@
+# d310_fixed.yaml
+consumption_offpeak:
+  description: Off‑peak consumption
+  label: Off‑Peak (kWh)
+  units: kWh
+  fixed_value: FIXED_VALUE
+  p10: P10
+  p50: P50
+  p90: P90
+  use_fixed: true
+  years: 1
+
+consumption_shoulder:
+  description: Shoulder consumption
+  label: Shoulder (kWh)
+  units: kWh
+  fixed_value: FIXED_VALUE
+  p10: P10
+  p50: P50
+  p90: P90
+  use_fixed: true
+  years: 1
+
+consumption_peak:
+  description: On‑peak consumption
+  label: Peak (kWh)
+  units: kWh
+  fixed_value: FIXED_VALUE
+  p10: P10
+  p50: P50
+  p90: P90
+  use_fixed: true
+  years: 1
+
+billing_demand:
+  description: Demand (kVA)
+  label: Billing Demand
+  units: kVA
+  fixed_value: FIXED_VALUE
+  p10: P10
+  p50: P50
+  p90: P90
+  use_fixed: true
+  years: 1
+
+days:
+  description: Billing period length
+  label: Days
+  units: days
+  fixed_value: FIXED_VALUE
+  p10: P10
+  p50: P50
+  p90: P90
+  use_fixed: true
+  years: 1
+
+service_charge:
+  description: Service charge ($/day)
+  label: Service Charge
+  units: $CAD/day
+  fixed_value: FIXED_VALUE
+  p10: P10
+  p50: P50
+  p90: P90
+  use_fixed: true
+  years: 1
+
+facilities_charge:
+  description: Facilities charge ($/day·kVA)
+  label: Facilities Charge
+  units: $CAD/(day·kVA)
+  fixed_value: FIXED_VALUE
+  p10: P10
+  p50: P50
+  p90: P90
+  use_fixed: true
+  years: 1
+
+nonratchet_demand_charge:
+  description: Non‑ratchet demand charge ($/day·kVA)
+  label: Non‑Ratchet Demand Charge
+  units: $CAD/(day·kVA)
+  fixed_value: FIXED_VALUE
+  p10: P10
+  p50: P50
+  p90: P90
+  use_fixed: true
+  years: 1
+
+transmission_demand_charge:
+  description: Transmission demand charge ($/day·kVA)
+  label: Transmission Demand Charge
+  units: $CAD/(day·kVA)
+  fixed_value: FIXED_VALUE
+  p10: P10
+  p50: P50
+  p90: P90
+  use_fixed: true
+  years: 1
+
+variable_offpeak_charge:
+  description: Off‑peak variable charge ($/kWh)
+  label: Off‑Peak Charge
+  units: $CAD/kWh
+  fixed_value: FIXED_VALUE
+  p10: P10
+  p50: P50
+  p90: P90
+  use_fixed: true
+  years: 1
+
+variable_shoulder_charge:
+  description: Shoulder variable charge ($/kWh)
+  label: Shoulder Charge
+  units: $CAD/kWh
+  fixed_value: FIXED_VALUE
+  p10: P10
+  p50: P50
+  p90: P90
+  use_fixed: true
+  years: 1
+
+variable_peak_charge:
+  description: Peak variable charge ($/kWh)
+  label: Peak Charge
+  units: $CAD/kWh
+  fixed_value: FIXED_VALUE
+  p10: P10
+  p50: P50
+  p90: P90
+  use_fixed: true
+  years: 1

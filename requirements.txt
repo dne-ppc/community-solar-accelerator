@@ -13,3 +13,4 @@ pyyaml
 tabulate
 numpy-financial
 graphviz
+statsmodels

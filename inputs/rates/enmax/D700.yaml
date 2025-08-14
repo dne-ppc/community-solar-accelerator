@@ -1,0 +1,100 @@
+# d100_fixed.yaml
+consumption:
+  description: Total kWh consumption
+  label: Consumption (kWh)
+  units: kWh
+  fixed_value: FIXED_VALUE
+  p10: P10
+  p50: P50
+  p90: P90
+  use_fixed: true
+  years: 1
+
+days:
+  description: Billing period length
+  label: Days
+  units: days
+  fixed_value: FIXED_VALUE
+  p10: P10
+  p50: P50
+  p90: P90
+  use_fixed: true
+  years: 1
+
+service_charge:
+  description: Service charge ($/day)
+  label: Service Charge
+  units: $CAD/day
+  fixed_value: FIXED_VALUE
+  p10: P10
+  p50: P50
+  p90: P90
+  use_fixed: true
+  years: 1
+
+energy_charge:
+  description: Energy charge ($/kWh)
+  label: Energy Charge
+  units: $CAD/kWh
+  fixed_value: FIXED_VALUE
+  p10: P10
+  p50: P50
+  p90: P90
+  use_fixed: true
+  years: 1
+
+distribution_variable_charge:
+  description: Distribution variable charge ($/kWh)
+  label: Distribution Charge
+  units: $CAD/kWh
+  fixed_value: FIXED_VALUE
+  p10: P10
+  p50: P50
+  p90: P90
+  use_fixed: true
+  years: 1
+
+transmission_variable_charge:
+  description: Transmission variable charge ($/kWh)
+  label: Transmission Charge
+  units: $CAD/kWh
+  fixed_value: FIXED_VALUE
+  p10: P10
+  p50: P50
+  p90: P90
+  use_fixed: true
+  years: 1
+
+billing_demand:
+  description: Demand (kVA)
+  label: Billing Demand
+  units: kVA
+  fixed_value: FIXED_VALUE
+  p10: P10
+  p50: P50
+  p90: P90
+  use_fixed: true
+  years: 1
+
+
+nonratchet_demand_charge:
+  description: Non‑ratchet demand charge ($/day·kVA)
+  label: Non‑Ratchet Demand Charge
+  units: $CAD/(day·kVA)
+  fixed_value: FIXED_VALUE
+  p10: P10
+  p50: P50
+  p90: P90
+  use_fixed: true
+  years: 1
+
+transmission_demand_charge:
+  description: Transmission demand charge ($/day·kVA)
+  label: Transmission Demand Charge
+  units: $CAD/(day·kVA)
+  fixed_value: FIXED_VALUE
+  p10: P10
+  p50: P50
+  p90: P90
+  use_fixed: true
+  years: 1

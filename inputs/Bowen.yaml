@@ -1,0 +1,270 @@
+admin_rate:
+  description: The amount of administrative costs for the project as a function of
+    capital expenditure. This includes management, legal, and other overhead costs.
+  fixed_value: 0.5
+  label: Administration Rate (%)
+  max_value: 1.5
+  min_value: 0.0
+  p10: 0.3
+  p50: 0.5
+  p90: 0.7
+  scenario: Base
+  step: 0.01
+  units: '%'
+  use_fixed: false
+  years: 1
+capex:
+  description: The total capital expenditure for the solar project, including installation
+    and equipment costs.
+  fixed_value: 100000
+  label: Capital Expenditure (CapEx) ($CAD)
+  max_value: 5000000
+  min_value: 1000
+  p10: 200000
+  p50: 225000
+  p90: 250000
+  scenario: Base
+  step: 1000
+  units: $CAD
+  use_fixed: false
+  years: 1
+capital_return_year:
+  description: The year in which the capital return is expected to be achieved. This
+    is important for financial planning and cash flow management.
+  fixed_value: 4.0
+  label: Capital Return Year (#)
+  max_value: 25.0
+  min_value: 0.0
+  p10: 4.0
+  p50: 10.0
+  p90: 15.0
+  scenario: Base
+  step: 0.1
+  units: '#'
+  use_fixed: false
+  years: 1
+degradation_rate:
+  description: The annual decrease in the efficiency of solar panels. A lower degradation
+    rate means the panels will produce energy more efficiently over time.
+  fixed_value: 0.5
+  label: Degradation Rate (%)
+  max_value: 1.0
+  min_value: 0.0
+  p10: 0.3
+  p50: 0.5
+  p90: 0.7
+  scenario: Base
+  step: 0.1
+  units: '%'
+  use_fixed: false
+  years: 1
+discount_rate:
+  description: The discount rate used for calculating the present value of future
+    cash flows. This is important for assessing the financial viability of the project
+    over time.
+  fixed_value: 4.0
+  label: Discount Rate (%)
+  max_value: 10.0
+  min_value: 0.0
+  p10: 3.0
+  p50: 4.0
+  p90: 6.0
+  scenario: Base
+  step: 0.01
+  units: '%'
+  use_fixed: false
+  years: 1
+dividend_rate:
+  description: The specified return on investment for the capital used in the solar
+    project. This is a key factor in determining the financial viability of the project.
+  fixed_value: 4.0
+  label: Dividend Rate (%)
+  max_value: 12.0
+  min_value: 0.0
+  p10: 2.0
+  p50: 4.0
+  p90: 6.0
+  scenario: Base
+  step: 0.1
+  units: '%'
+  use_fixed: false
+  years: 1
+dividend_start_year:
+  description: The year when dividends are expected to start being paid out to investors.
+    This is crucial for attracting investment and ensuring financial sustainability.
+  fixed_value: 3.0
+  label: Dividend Start Year (#)
+  max_value: 25.0
+  min_value: 0.0
+  p10: 1.0
+  p50: 3.0
+  p90: 5.0
+  scenario: Base
+  step: 0.1
+  units: '#'
+  use_fixed: true
+  years: 1
+electricity_price:
+  description: The price of electricity per kilowatt-hour. This affects the revenue
+    generated from selling excess energy back to the grid.
+  fixed_value: 0.3
+  label: Electricity Price ($CAD/kWh)
+  max_value: 0.4
+  min_value: 0.01
+  p10: 0.06
+  p50: 0.14
+  p90: 0.22
+  scenario: Base
+  step: 0.01
+  units: $CAD/kWh
+  use_fixed: false
+  years: 25
+funding_buffer_percent:
+  description: The percentage of the total project cost set aside as a buffer for
+    unexpected expenses or cost overruns. This helps ensure the project remains financially
+    viable.
+  fixed_value: 10.0
+  label: Funding Buffer Percentage (%)
+  max_value: 20.0
+  min_value: 0.0
+  p10: 5.0
+  p50: 10.0
+  p90: 15.0
+  scenario: Base
+  step: 1.0
+  units: '%'
+  use_fixed: false
+  years: 1
+inflation_rate:
+  description: The expected rate of inflation over the project's lifetime. This affects
+    the real value of costs and revenues, impacting overall profitability.
+  fixed_value: 2.0
+  label: Inflation Rate (%)
+  max_value: 5.0
+  min_value: 0.0
+  p10: 1.0
+  p50: 2.0
+  p90: 3.0
+  scenario: Base
+  step: 0.01
+  units: '%'
+  use_fixed: false
+  years: 1
+insurance_rate:
+  description: The cost of insurance for the solar project as a percentage of the
+    total capital expenditure. This covers risks such as damage, theft, and liability.
+  fixed_value: 0.2
+  label: Insurance Rate (%)
+  max_value: 1.5
+  min_value: 0.0
+  p10: 0.3
+  p50: 0.5
+  p90: 0.7
+  scenario: Base
+  step: 0.01
+  units: '%'
+  use_fixed: false
+  years: 1
+itc_rate:
+  description: The percentage of the total project cost that can be claimed as an
+    investment tax credit, reducing the overall tax burden and improving cash flow.
+  fixed_value: 30.0
+  label: Investment Tax Credit Rate (%)
+  max_value: 30.0
+  min_value: 0.0
+  p10: 5.0
+  p50: 10.0
+  p90: 15.0
+  scenario: Base
+  step: 1.0
+  units: '%'
+  use_fixed: true
+  years: 1
+itc_year:
+  description: The year in which the investment tax credit is expected to be claimed.
+    This is important for cash flow planning and tax strategy.
+  fixed_value: 2
+  label: Investment Tax Credit Year (#)
+  max_value: 25
+  min_value: 0
+  p10: 1
+  p50: 2
+  p90: 3
+  scenario: Base
+  step: 1
+  units: null
+  use_fixed: true
+  years: 1
+maintenance_rate:
+  description: The annual maintenance costs as a percentage of the total capital expenditure.
+    This includes repairs, cleaning, and other ongoing maintenance activities.
+  fixed_value: 0.5
+  label: Maintenance Rate (%)
+  max_value: 1.5
+  min_value: 0.0
+  p10: 0.3
+  p50: 0.5
+  p90: 0.7
+  scenario: Base
+  step: 0.01
+  units: '%'
+  use_fixed: false
+  years: 1
+public_funding_percent:
+  description: The percentage of the total project cost that is covered by public
+    funding or investment. This can significantly affect the financial viability of
+    the project.
+  fixed_value: 50.0
+  label: Public Funding Percentage (%)
+  max_value: 100.0
+  min_value: 0.0
+  p10: 25.0
+  p50: 50.0
+  p90: 75.0
+  scenario: Base
+  step: 1.0
+  units: '%'
+  use_fixed: false
+  years: 1
+return_period:
+  description: The number of years over which capital is returned
+  fixed_value: 5.0
+  label: Dividend Return Period (#)
+  max_value: 25.0
+  min_value: 0.0
+  p10: 5.0
+  p50: 10.0
+  p90: 15.0
+  scenario: Base
+  step: 1.0
+  units: '#'
+  use_fixed: false
+  years: 1
+start_year_proportion:
+  description: The percentage of year 0 that the project is active
+  fixed_value: 0.25
+  label: Year 0 Proportion (%)
+  max_value: 0.0
+  min_value: 1.0
+  p10: 0.25
+  p50: 0.5
+  p90: 0.75
+  scenario: Base
+  step: 0.01
+  units: '%'
+  use_fixed: false
+  years: 1
+system_output:
+  description: The system output during year 0
+  fixed_value: 75000
+  label: System Output (kWh)
+  max_value: 1000000
+  min_value: 20000
+  p10: 90000
+  p50: 95000
+  p90: 100000
+  scenario: Base
+  step: 1000
+  units: kWh
+  use_fixed: false
+  years: 1
