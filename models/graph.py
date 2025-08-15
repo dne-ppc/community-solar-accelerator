@@ -6,18 +6,16 @@ import yaml
 import numpy as np
 import pandas as pd
 from pydantic import computed_field
-from models.core.types import (
-    RoleRegistry,
-    ModelInput,
-    ModelCalculation,
-    ModelOutput,
+from models.types import (
+    Input,
     PandasDataFrame,
     PlotlyFigure,
 )
 import plotly.graph_objects as go
+from models.utils import RoleRegistry
 
 
-class CommonModelMixin:
+class TensorGraph:
     """
     Mix-in capturing:
       • inputs_names, inputs_fields, assumptions
@@ -82,22 +80,6 @@ class CommonModelMixin:
                 out[name] = val
         return out
 
-    # --------------- Conveniences for common roles --------------------------
-    @computed_field
-    @property
-    def inputs_names(self) -> List[str]:
-        return self.role_names("input")
-    
-
-    @computed_field
-    @property
-    def calc_names(self) -> List[str]:
-        return self.role_names("calc")
-
-    @computed_field
-    @property
-    def output_names(self) -> List[str]:
-        return self.role_names("output")
 
     # --------------- Dynamic accessors for arbitrary roles ------------------
     def __getattr__(self, name: str):
@@ -142,7 +124,7 @@ class CommonModelMixin:
         """
         for name in type(self).role_names_cls("input"):
 
-            mi = ModelInput.from_config(
+            mi = Input.from_config(
                 self.scenario,
                 name,
                 years=self.years,
@@ -159,11 +141,6 @@ class CommonModelMixin:
         exclude = [
             "data",
             "dist",
-            "dist_plot",
-            "hist_plot",
-            "controls",
-            "surface_plot",
-            "timeseries_plot",
             "boundedness",
             "iterations",
         ]

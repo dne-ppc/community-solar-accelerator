@@ -1,6 +1,6 @@
 from typing import TypeVar
 from pydantic import computed_field
-from models.core.types import ModelInput, ModelOutput, ModelCalculation
+from models.types import Input, Output, Calculation
 from models.financial import FinancialModel
 import numpy as np
 import pandas as pd
@@ -18,64 +18,41 @@ HOURS_PER_YEAR = 8766
 class SolarProject(FinancialModel):
 
     # capacity_factor: ModelInput
-    capex: ModelInput
-    degradation_rate: ModelInput
+    capex: Input
+    degradation_rate: Input
     # install_cost: ModelInput
     # production: ModelInput
 
-    public_funding_percent: ModelInput
-    funding_buffer_percent: ModelInput
-    itc_rate: ModelInput
-    itc_year: ModelInput
-    start_year_proportion: ModelInput
+    public_funding_percent: Input
+    funding_buffer_percent: Input
+    itc_rate: Input
+    itc_year: Input
+    start_year_proportion: Input
     
 
-    electricity_price: ModelInput
-    inflation_rate: ModelInput
-    discount_rate: ModelInput
-    maintenance_rate: ModelInput
-    admin_rate: ModelInput
-    insurance_rate: ModelInput
+    electricity_price: Input
+    inflation_rate: Input
+    discount_rate: Input
+    maintenance_rate: Input
+    admin_rate: Input
+    insurance_rate: Input
 
-    dividend_rate: ModelInput
+    dividend_rate: Input
 
-    dividend_start_year: ModelInput
-    capital_return_year: ModelInput
-    return_period: ModelInput
+    dividend_start_year: Input
+    capital_return_year: Input
+    return_period: Input
 
-    system_output: ModelInput
-
-
-    # TODO
-    # commissioning_fraction: ModelInput  # (or just a float, but ModelInput is more flexible)
-
-    # @computed_field
-    # @property
-    # def capex(self) -> ModelOutput:
-    #     """
-    #     Capital expenditure (CAPEX) as install_cost ($/W) * panel_power (W) * number_of_panels.
-    #     """
-    #     arr = (
-    #         self.install_cost
-    #         * (self.system_output / HOURS_PER_YEAR / (self.capacity_factor / 100))
-    #         * 1000
-    #     )
-    #     return ModelOutput(
-    #         scenario=self.scenario,
-    #         label="CAPEX ($CAD)",
-    #         description="Capital expenditure",
-    #         units="$CAD",
-    #         data=arr,
-    #     )
+    system_output: Input
 
     @computed_field
     @property
-    def seed_capital(self) -> ModelCalculation:
+    def seed_capital(self) -> Calculation:
         """
         Seed capital needed: capex * (1 + self.funding_buffer_percent / 100.0).
         """
         arr = self.capex * (1 + self.funding_buffer_percent / 100.0)
-        return ModelCalculation(
+        return Calculation(
             scenario=self.scenario,
             label="seed_capital",
             description="Initial seed capital from public funding",
@@ -85,12 +62,12 @@ class SolarProject(FinancialModel):
 
     @computed_field
     @property
-    def public_investment(self) -> ModelCalculation:
+    def public_investment(self) -> Calculation:
         """
         Public investment portion: seed_capital + funding_buffer_percent buffer.
         """
         arr = self.seed_capital * self.public_funding_percent / 100.0
-        return ModelCalculation(
+        return Calculation(
             scenario=self.scenario,
             label="public_investment",
             description="Total public investment including buffer",
@@ -100,12 +77,12 @@ class SolarProject(FinancialModel):
 
     @computed_field
     @property
-    def private_investment(self) -> ModelCalculation:
+    def private_investment(self) -> Calculation:
         """
         Private investment portion: capex - public_investment.
         """
         arr = self.seed_capital * (1 - self.public_funding_percent / 100.0)
-        return ModelCalculation(
+        return Calculation(
             scenario=self.scenario,
             label="private_investment",
             description="Equity sought from private investors",
@@ -115,13 +92,13 @@ class SolarProject(FinancialModel):
 
     @computed_field
     @property
-    def degradation_schedule(self) -> ModelCalculation:
+    def degradation_schedule(self) -> Calculation:
         """
         Yearly degradation factor: (1 - degradation_rate/100) ** years_array.
         """
         arr = np.ones((self.iterations, self.years))
         arr[:,1:] = (1 - self.degradation_rate / 100) ** self.years_array
-        return ModelCalculation(
+        return Calculation(
             scenario=self.scenario,
             label="degradation_schedule",
             description="Annual degradation multiplier",
@@ -131,13 +108,13 @@ class SolarProject(FinancialModel):
 
     @computed_field
     @property
-    def production(self) -> ModelCalculation:
+    def production(self) -> Calculation:
         """
         Annual energy production (kWh): system_output * degradation_schedule.
         """
         arr = self.system_output * self.degradation_schedule
         arr[:, 0] *= self.start_year_proportion[:, 0]
-        return ModelCalculation(
+        return Calculation(
             scenario=self.scenario,
             label="production",
             description="Annual energy produced",
@@ -147,14 +124,14 @@ class SolarProject(FinancialModel):
 
     @computed_field
     @property
-    def escalation_schedule(self) -> ModelCalculation:
+    def escalation_schedule(self) -> Calculation:
         """
         Inflation escalation factor: (1 + inflation_rate/100) ** years_array.
         """
         arr = np.zeros((self.iterations, self.years))
         arr[:,0] = self.capex[:,0]
         arr[:,1:] = ((1 + self.inflation_rate / 100) ** self.years_array) * self.capex
-        return ModelCalculation(
+        return Calculation(
             scenario=self.scenario,
             label="escalation",
             description="Inflation escalation factor",
@@ -164,7 +141,7 @@ class SolarProject(FinancialModel):
 
     @computed_field
     @property
-    def maintenance_cost(self) -> ModelCalculation:
+    def maintenance_cost(self) -> Calculation:
         """
         Annual maintenance cost: (maintenance_rate/100) * escalation * capex.
         """
@@ -172,7 +149,7 @@ class SolarProject(FinancialModel):
 
         arr[:, 0] *= self.start_year_proportion[:, 0]
 
-        return ModelCalculation(
+        return Calculation(
             scenario=self.scenario,
             label="maintenance_cost",
             description="Annual maintenance cost adjusted for inflation",
@@ -182,13 +159,13 @@ class SolarProject(FinancialModel):
 
     @computed_field
     @property
-    def admin_cost(self) -> ModelCalculation:
+    def admin_cost(self) -> Calculation:
         """
         Annual administrative cost: (admin_rate/100) * escalation * capex.
         """
         arr = (self.admin_rate / 100) * self.escalation_schedule
         arr[:, 0] *= self.start_year_proportion[:, 0]
-        return ModelCalculation(
+        return Calculation(
             scenario=self.scenario,
             label="admin_cost",
             description="Annual administrative cost adjusted for inflation",
@@ -198,13 +175,13 @@ class SolarProject(FinancialModel):
 
     @computed_field
     @property
-    def insurance_cost(self) -> ModelCalculation:
+    def insurance_cost(self) -> Calculation:
         """
         Annual insurance cost: (insurance_rate/100) * escalation * capex.
         """
         arr = (self.insurance_rate / 100) * self.escalation_schedule
         arr[:, 0] *= self.start_year_proportion[:, 0]
-        return ModelCalculation(
+        return Calculation(
             scenario=self.scenario,
             label="insurance_cost",
             description="Annual insurance cost adjusted for inflation",
@@ -214,12 +191,12 @@ class SolarProject(FinancialModel):
 
     @computed_field
     @property
-    def opex(self) -> ModelOutput:
+    def opex(self) -> Output:
         """
         Total operating expenses (OPEX) per year: maintenance_cost + admin_cost + insurance_cost.
         """
         costs = self.maintenance_cost + self.admin_cost + self.insurance_cost
-        return ModelOutput(
+        return Output(
             scenario=self.scenario,
             label="opex",
             description="Total operating expenses per year",
@@ -229,11 +206,11 @@ class SolarProject(FinancialModel):
 
     @computed_field
     @property
-    def revenue(self) -> ModelOutput:
+    def revenue(self) -> Output:
         """
         Annual revenue: production * electricity_price.
         """
-        return ModelOutput(
+        return Output(
             scenario=self.scenario,
             label="revenue",
             description="Annual revenue from energy sales",
@@ -241,23 +218,10 @@ class SolarProject(FinancialModel):
             data=self.production * self.electricity_price + self.tax_revenue,
         )
 
-    @computed_field
-    @property
-    def operating_margin(self) -> ModelCalculation:
-        """
-        Operating margin per year: revenue - opex.
-        """
-        return ModelCalculation(
-            scenario=self.scenario,
-            label="operating_margin",
-            description="Operating margin per year",
-            units="$CAD",
-            data=self.revenue - self.opex,
-        )
 
     @computed_field
     @property
-    def capital_returned(self) -> ModelCalculation:
+    def capital_returned(self) -> Calculation:
         """
         Annual capital returned to investors: spread equally across return_period,
         starting at capital_return_year, ending at capital_return_year + return_period - 1.
@@ -290,7 +254,7 @@ class SolarProject(FinancialModel):
         # Apply payments
         payments = np.where(mask, annual_payment[:, None], 0)
 
-        return ModelCalculation(
+        return Calculation(
             scenario=self.scenario,
             label="capital_returned",
             description="Annual capital returned to investors (repayment finishes after return_period)",
@@ -300,7 +264,7 @@ class SolarProject(FinancialModel):
 
     @computed_field
     @property
-    def remaining_private_investment(self) -> ModelCalculation:
+    def remaining_private_investment(self) -> Calculation:
         """
         Remaining private investment after dividend payments.
         """
@@ -313,7 +277,7 @@ class SolarProject(FinancialModel):
             )
             current_investment[np.abs(current_investment) < 1e-9] = 0
             remaining[:, year] = current_investment
-        return ModelCalculation(
+        return Calculation(
             scenario=self.scenario,
             label="remaining_private_investment",
             description="Outstanding private investment over time",
@@ -323,7 +287,7 @@ class SolarProject(FinancialModel):
 
     @computed_field
     @property
-    def investor_dividends(self) -> ModelCalculation:
+    def investor_dividends(self) -> Calculation:
         """
         Dividends distributed to investors once capital_returned phases out.
         """
@@ -331,7 +295,7 @@ class SolarProject(FinancialModel):
 
         if self.years <= 1:
             # Not enough years for dividends (need at least year 1)
-            return ModelCalculation(
+            return Calculation(
                 scenario=self.scenario,
                 label="investor_dividends",
                 description="Annual dividends paid to investors",
@@ -366,7 +330,7 @@ class SolarProject(FinancialModel):
         # Apply dividends only where mask is True
         dividends[:, 1:] = np.where(dividend_mask, dividend_amounts, 0)
 
-        return ModelCalculation(
+        return Calculation(
             scenario=self.scenario,
             label="investor_dividends",
             description="Annual dividends paid to investors",
@@ -376,11 +340,11 @@ class SolarProject(FinancialModel):
 
     @computed_field
     @property
-    def finance_costs(self) -> ModelOutput:
+    def finance_costs(self) -> Output:
         """
         Annual financing cost: interest on remaining_private_investment at capital_return_rate.
         """
-        return ModelOutput(
+        return Output(
             scenario=self.scenario,
             label="Finance Costs ($CAD)",
             description="Annual financing cost",
@@ -388,24 +352,10 @@ class SolarProject(FinancialModel):
             data=self.capital_returned + self.investor_dividends,
         )
 
-    @computed_field
-    @property
-    def retained_earnings(self) -> ModelOutput:
-        """
-        Retained earnings each year: cumulative sum of cashflow.
-        """
-
-        return ModelOutput(
-            scenario=self.scenario,
-            label="Retained Earnings ($CAD)",
-            description="Cumulative retained earnings",
-            units="$CAD",
-            data=self.operating_margin - self.finance_costs,
-        )
 
     @computed_field
     @property
-    def total_cash(self) -> ModelCalculation:
+    def total_cash(self) -> Calculation:
         """
         Total cumulative cash in the project over time.
         Starts with initial investment and accumulates operating margin minus finance costs.
@@ -432,7 +382,7 @@ class SolarProject(FinancialModel):
                 cumulative_cash[:, year - 1] + annual_net_cash_flow[:, year]
             )
 
-        return ModelCalculation(
+        return Calculation(
             scenario=self.scenario,
             label="Total Project Cash ($CAD)",
             description="Cumulative cash balance in the project over time",
@@ -453,7 +403,7 @@ class SolarProject(FinancialModel):
 
     @computed_field
     @property
-    def private_investor_irr(self) -> ModelCalculation:
+    def private_investor_irr(self) -> Calculation:
         """
         Vectorized IRR for private investors, but only attempt solver if there's a sign change.
         Returns IRR in percent. Any iteration with no valid IRR → np.nan.
@@ -479,7 +429,7 @@ class SolarProject(FinancialModel):
                 irr_array[i, 0] = float(raw * 100) if np.isfinite(raw) else np.nan
             # else: leave as np.nan
 
-        return ModelCalculation(
+        return Calculation(
             scenario=self.scenario,
             label="Private Investor IRR (%)",
             description="Internal Rate of Return for private‐equity investors",
@@ -487,38 +437,6 @@ class SolarProject(FinancialModel):
             data=irr_array,
         )
 
-    @computed_field
-    @property
-    def project_irr(self) -> ModelCalculation:
-        """
-        Vectorized IRR for the entire project (all capital).
-        Same pattern: check for sign change, then npf.irr, else np.nan.
-        """
-        n_iter = self.iterations
-        n_years = self.years
-
-        cash_flows = np.zeros((n_iter, n_years + 1))
-        cash_flows[:, 0] = -self.capex[:, 0]  # Year 0 outflow
-        cash_flows[:, 1:] = self.retained_earnings
-
-        irr_array = np.full((n_iter, 1), np.nan, dtype=float)
-
-        for i in range(n_iter):
-            cf = cash_flows[i, :]
-            if self._has_sign_change(cf):
-                try:
-                    raw = npf.irr(cf)
-                except Exception:
-                    raw = np.nan
-                irr_array[i, 0] = float(raw * 100) if np.isfinite(raw) else np.nan
-
-        return ModelCalculation(
-            scenario=self.scenario,
-            label="Project IRR (%)",
-            description="Internal Rate of Return for the overall project",
-            units="%",
-            data=irr_array,
-        )
 
     @computed_field
     @property
@@ -539,27 +457,10 @@ class SolarProject(FinancialModel):
         df.index.name = "Metric"
         return df.T
 
-    @computed_field
-    @property
-    def project_irr_percentiles(self) -> PandasDataFrame:
-        """
-        P10/P50/P90 of project_irr (ignoring NaNs).
-        """
-        raw = self.project_irr.data.flatten()
-        finite = raw[np.isfinite(raw)]
-        if finite.size == 0:
-            p10 = p50 = p90 = np.nan
-        else:
-            p10, p50, p90 = np.nanpercentile(finite, [10, 50, 90])
-        df = pd.DataFrame(
-            {self.project_irr.label: [p10, p50, p90]}, index=["P10", "P50", "P90"]
-        )
-        df.index.name = "Metric"
-        return df.T
 
     @computed_field
     @property
-    def years_to_self_fund(self) -> ModelCalculation:
+    def years_to_self_fund(self) -> Calculation:
         """
         (Exactly as before) Returns a ModelCalculation whose .data is
         shape (n_iter, 1), with each row = first 1-based year where
@@ -577,7 +478,7 @@ class SolarProject(FinancialModel):
             first_idx = mask.argmax(axis=1)
             years_arr[ever, 0] = first_idx[ever] + 1
 
-        return ModelCalculation(
+        return Calculation(
             scenario=self.scenario,
             label="Years to Self Fund",
             data=years_arr,
@@ -623,7 +524,7 @@ class SolarProject(FinancialModel):
 
     @computed_field
     @property
-    def cash_depletion_year(self) -> ModelCalculation:
+    def cash_depletion_year(self) -> Calculation:
         """
         For iterations that go negative, the year when cash first becomes negative.
         Returns -1 for iterations that never go negative.
@@ -642,7 +543,7 @@ class SolarProject(FinancialModel):
         depletion_years[ever] = first_idx[ever] + 1
         # Reshape to (n_iter, 1)
         result_array = depletion_years.reshape(self.iterations, 1)
-        return ModelCalculation(
+        return Calculation(
             scenario=self.scenario,
             label="Cash Depletion Year",
             description="Year when project cash first goes negative (-1 if never negative)",
@@ -679,7 +580,7 @@ class SolarProject(FinancialModel):
 
     @computed_field
     @property
-    def profitability_index(self) -> ModelCalculation:
+    def profitability_index(self) -> Calculation:
         """
         Profitability Index (PV of inflows / PV of outflows).
         """
@@ -713,7 +614,7 @@ class SolarProject(FinancialModel):
         # Reshape to (n_iter, 1) for ModelCalculation
         pi_matrix = pi_vals.reshape(n_iter, 1)
 
-        return ModelCalculation(
+        return Calculation(
             scenario=self.scenario,
             label="Profitability Index",
             description="PV of inflows divided by PV of outflows",
@@ -721,123 +622,11 @@ class SolarProject(FinancialModel):
             data=pi_matrix,
         )
 
-    @computed_field
-    @property
-    def payback_period(self) -> ModelCalculation:
-        """
-        Undiscounted payback period: first 1-based year when cumulative undiscounted cash sum ≥ 0,
-        based on initial capex and annual retained earnings. Returns 9999 if never reached.
-        """
-        n_iter = self.iterations
-        n_years = self.years
-        # Construct cash flows: t=0 outflow and t=1..n retained earnings
-        cash_flows = np.zeros((n_iter, n_years + 1))
-        cash_flows[:, 0] = -self.capex.data[:, 0]
-        cash_flows[:, 1:] = self.retained_earnings.data
 
-        # Compute cumulative sum along time axis
-        cum_cf = np.cumsum(cash_flows, axis=1)
-
-        # Initialize payback with sentinel
-        payback = np.full((n_iter, 1), 9999, dtype=int)
-
-        # For each iteration, find first year index where cum_cf >=0
-        mask = cum_cf >= 0
-        ever = mask.any(axis=1)
-        if ever.any():
-            first_indices = mask.argmax(axis=1)
-            # Convert to 1-based years (index corresponds to year)
-            payback[ever, 0] = first_indices[ever]
-
-        return ModelCalculation(
-            scenario=self.scenario,
-            label="Payback Period",
-            description="Undiscounted payback period in years (first year where cumulative cash ≥ 0)",
-            units="year",
-            data=payback,
-        )
 
     @computed_field
     @property
-    def payback_year_percentiles(self) -> PandasDataFrame:
-        """
-        Compute payback period percentiles across iterations.
-
-        Parameters
-        ----------
-        percentiles : tuple of int
-            Percentile levels to compute (e.g., (10, 50, 90)).
-
-        Returns
-        -------
-        pd.DataFrame
-            DataFrame indexed by percentile label ('p10', 'p50', etc.) with a single
-            column 'year' giving the payback period at that percentile.
-        """
-        raw = self.payback_period.data.flatten()
-        finite = raw[np.isfinite(raw)]
-        if finite.size == 0:
-            p10 = p50 = p90 = np.nan
-        else:
-            p10, p50, p90 = np.nanpercentile(finite, [10, 50, 90])
-        df = pd.DataFrame(
-            {self.payback_period.label: [p10, p50, p90]}, index=["P90", "P50", "P10"]
-        ).replace(9999, np.nan)
-        df.index.name = "Metric"
-        return df.T
-
-    @computed_field
-    @property
-    def roi(self) -> ModelCalculation:
-        """
-        Undiscounted return on investment: net cash at end divided by initial investment.
-        """
-        n_iter = self.iterations
-        n_years = self.years
-        cash_flows = np.zeros((n_iter, n_years + 1))
-        cash_flows[:, 0] = -self.capex.data[:, 0]
-        cash_flows[:, 1:] = self.retained_earnings.data
-
-        cum_cf = np.cumsum(cash_flows, axis=1)
-        final_cf = cum_cf[:, -1]
-        initial_inv = -cash_flows[:, 0]
-        roi_vals = np.where(initial_inv > 0, final_cf / initial_inv, np.nan)
-        roi_matrix = roi_vals.reshape(n_iter, 1)
-
-        return ModelCalculation(
-            scenario=self.scenario,
-            label="ROI (%)",
-            description="Undiscounted return on investment: net cash at end divided by initial investment",
-            units="unitless",
-            data=roi_matrix,
-        )
-
-    @computed_field
-    @property
-    def roi_percentiles(self) -> PandasDataFrame:
-        """
-        Compute ROI percentiles across iterations.
-
-        Returns
-        -------
-        pd.DataFrame
-            DataFrame indexed by ['P10', 'P50', 'P90'] with a single column 'ROI' giving the ROI at that percentile.
-        """
-        raw = self.roi.data.flatten()
-        finite = raw[np.isfinite(raw)]
-        if finite.size == 0:
-            p10 = p50 = p90 = np.nan
-        else:
-            p10, p50, p90 = np.nanpercentile(finite, [10, 50, 90])
-        df = pd.DataFrame(
-            {self.roi.label: [p10, p50, p90]}, index=["P10", "P50", "P90"]
-        ).replace(9999, np.nan)
-        df.index.name = "Metric"
-        return df.T
-
-    @computed_field
-    @property
-    def tax_revenue(self) -> ModelCalculation:
+    def tax_revenue(self) -> Calculation:
         """
         Investment Tax Credit revenue: initial CAPEX × ITC rate, claimed in ITC year.
         """
@@ -857,7 +646,7 @@ class SolarProject(FinancialModel):
         years = itc_years[valid]
         credits[idx, years] = init_capex[valid] * rates[valid]
 
-        return ModelCalculation(
+        return Calculation(
             scenario=self.scenario,
             label="Tax Revenue",
             description="Investment tax credit claimed in specified year",
@@ -865,172 +654,16 @@ class SolarProject(FinancialModel):
             data=credits,
         )
 
-
-    def iteration_summary(self) -> None:
-
-        iteration = st.number_input(
-            "Iteration",
-            min_value=0,
-            max_value=self.iterations - 1,
-            value=0,
-            step=1,
-            help="Select the iteration to view detailed financials.")
-
-        investment = pd.DataFrame(
-            data=[
-                self.system_output[iteration],
-                self.private_investment[iteration],
-                self.public_investment[iteration],
-                self.seed_capital[iteration],
-                self.dividend_rate[iteration],
-                self.dividend_start_year[iteration],
-                self.capital_return_year[iteration],
-                self.return_period[iteration],
-                self.discount_rate[iteration],
-            ],
-            index=[
-                "System Output",
-                "Private Investment",
-                "Public Investment",
-                "Seed Capital",
-                "Dividend Rate",
-                "Dividend Start Year",
-                "Capital Return Start Year",
-                "Return Periods",
-                "Discount Rate",
-            ],
-            columns=[""],
-        )
-
-        system = pd.DataFrame(
-            data=[
-                self.system_output[iteration],
-                # self.electricity_price[iteration,0:1],
-                self.degradation_rate[iteration],
-            ],
-            index=[
-                "System Output",
-                # "Electricity Price",
-                "Panel Degradation Rate",
-            ],
-            columns=[""],
-        )
-
-        costs = pd.DataFrame(
-            data=[
-                self.maintenance_rate[iteration],
-                self.admin_rate[iteration],
-                self.insurance_rate[iteration],
-                self.inflation_rate[iteration],
-            ],
-            index=[
-                "Maintenance Cost",
-                "Administrative Cost",
-                "Insurance Cost",
-                "Inflation Rate",
-            ],
-            columns=[""],
-        )
-
-        annual = pd.DataFrame(
-            data=[
-                self.production[iteration],
-                self.maintenance_cost[iteration],
-                self.admin_cost[iteration],
-                self.insurance_cost[iteration],
-                self.opex[iteration],
-                self.tax_revenue[iteration],
-                self.revenue[iteration],
-                self.operating_margin[iteration],
-                self.investor_dividends[iteration],
-                self.capital_returned[iteration],
-                self.finance_costs[iteration],
-                self.remaining_private_investment[iteration],
-                self.retained_earnings[iteration],
-            ],
-            index=[
-                "Energy Production (kWh)",
-                "Maintenance Cost",
-                "Admin Cost",
-                "Insurance Cost",
-                "OPEX",
-                "Tax Revenue",
-                "Revenue",
-                "Operating Margin",
-                "Investor Dividends",
-                "Capital Returned",
-                "Finance Costs",
-                "Remaining Private Investment",
-                "Retained Earnings",
-            ],
-            columns=range(2026, 2026 + self.years),
-        )
-
-        revenue = self.revenue.npv_iter(iteration, self.discount_rate / 100)
-        opex = self.opex.npv_iter(iteration, self.discount_rate / 100)
-        captial = self.private_investment[iteration]
-        finance = self.investor_dividends.npv_iter(iteration, self.discount_rate / 100)
-        total = revenue - opex - captial - finance
-
-        npv = pd.DataFrame(
-            data=[
-                revenue,
-                opex,
-                captial,
-                finance,
-                total
-
-            ],
-            index=[
-                "NPV Revenue",
-                "NPV OPEX",
-                "NPV Capital",
-                "NPV Financing",
-                "NPV Total"
-            ],
-            columns=[""],
-        )
-
-        cols = annual.columns
-
-        annual['Total'] = annual.sum(axis=1)
-
-        annual = annual[['Total'] + list(cols)]
-
-
-        col1,col2,col3,col4 = st.columns(4)
-
-        with col1:
-            st.subheader("Investment Assumptions")
-            st.dataframe(investment.round(2))
-
-        with col2:
-            st.subheader("System Assumptions")
-            st.dataframe(system.round(2))
-        with col3:
-            st.subheader("Cost Assumptions")
-            st.dataframe(costs.round(2))
-
-        with col4:
-
-            st.subheader("Net Present Value")
-            st.dataframe(npv.round(0))
-
-        st.subheader("Annual Financials")
-        st.dataframe(annual.round(0),height=500)
-
-
-
     @computed_field
     @property
-    def total_npv(self)-> ModelCalculation:
+    def total_npv(self)-> Calculation:
         dr = self.discount_rate / 100
         revenue = self.revenue.npv(dr)
         opex = self.opex.npv(dr)
         captial = self.private_investment
         finance = self.investor_dividends.npv(dr)
         total = revenue - opex - captial - finance
-        return ModelCalculation(
+        return Calculation(
             scenario=self.scenario,
             label="Total NPV",
             description="Net Present Value of the project",
@@ -1040,7 +673,7 @@ class SolarProject(FinancialModel):
 
     @computed_field
     @property
-    def free_cash_flow(self) -> ModelCalculation:
+    def free_cash_flow(self) -> Calculation:
         """
         Cash available to the overall pool once private investors are fully repaid:
         zero until remaining_private_investment ≤ 0, then equal to retained_earnings.
@@ -1053,7 +686,7 @@ class SolarProject(FinancialModel):
         # only after private capex is fully returned
         free = np.where(rem <= 0, ret, 0)
 
-        return ModelCalculation(
+        return Calculation(
             scenario=self.scenario,
             label="Free Cash Flow ($CAD)",
             description="Cashflow to pool after private investors fully repaid",

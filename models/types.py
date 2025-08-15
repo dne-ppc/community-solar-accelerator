@@ -14,9 +14,8 @@ from metalog import metalog
 import yaml
 import numpy_financial as npf
 
-from models.core.registry import RoleRegistry, register_role
-from models.core.tensor import TensorCore
-from models.ui import TensorUI, DistributionUI
+from models.utils import RoleRegistry, register_role
+from models.tensor import Tensor
 
 PandasDataFrame = TypeVar("pandas.core.frame.DataFrame")
 NdArray = TypeVar("numpy.ndarray")
@@ -26,17 +25,17 @@ np.float_ = np.float64
 
 
 @register_role("calc")
-class ModelCalculation(TensorCore, TensorUI):
+class Calculation(Tensor):
     pass
 
 
 @register_role("output")
-class ModelOutput(TensorCore, TensorUI):
+class Output(Tensor):
     pass
 
 
 @register_role("input")
-class ModelInput(TensorCore, TensorUI, DistributionUI):
+class Input(Tensor):
     """
     Stores the basic configuration for a single parameter's Metalog distribution.
     For example: Price of Gasoline ($/L), with min_value, max_value, p10, p50, p90, etc.

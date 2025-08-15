@@ -1,7 +1,9 @@
 import streamlit as st
+
 # from layout import Layout
-from models.portfolio import CommunityPortfolio
-from models.solar import SolarProject
+# from models.portfolio import CommunityPortfolio
+from projects.solar import SolarProject
+from ui.solar import layout
 
 
 st.set_page_config(
@@ -33,4 +35,4 @@ if "project" not in st.session_state:
 
 
 # st.session_state.simulation.sidenav()
-st.session_state.project.layout()
+layout(st.session_state.project)

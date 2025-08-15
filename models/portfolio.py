@@ -9,21 +9,21 @@ import streamlit as st
 from pydantic import BaseModel, Field, computed_field
 
 from models.core.types import (
-    ModelCalculation,
-    ModelOutput,
-    ModelInput,
+    Calculation,
+    Output,
+    Input,
     NdArray,
     PandasDataFrame,
 )
-from models.solar import SolarProject
-from models.mixin import CommonModelMixin
+from models.projects.solar import SolarProject
+from models.core.graph import TensorGraph
 
 
-class CommunityPortfolio(CommonModelMixin, BaseModel):
+class CommunityPortfolio(TensorGraph, BaseModel):
 
     model: SolarProject = SolarProject()
-    total_public_funding: ModelInput
-    max_projects_per_year: ModelInput
+    total_public_funding: Input
+    max_projects_per_year: Input
 
     metrics: ClassVar[List[str]] = [
         "opex",
@@ -46,7 +46,7 @@ class CommunityPortfolio(CommonModelMixin, BaseModel):
     ) -> None:
         for field_name in self.input_names:
             if field_name not in data:
-                data[field_name] = ModelInput.from_config(
+                data[field_name] = Input.from_config(
                     scenario,
                     field_name,
                     years=years,
@@ -110,9 +110,9 @@ class CommunityPortfolio(CommonModelMixin, BaseModel):
 
     @computed_field
     @property
-    def number_of_projects(self) -> ModelOutput:
+    def number_of_projects(self) -> Output:
         _, built = self.results
-        return ModelOutput(
+        return Output(
             scenario=self.scenario,
             label="Projects Funded",
             description="Number of projects funded each year",
@@ -122,9 +122,9 @@ class CommunityPortfolio(CommonModelMixin, BaseModel):
 
     @computed_field
     @property
-    def total_projects(self) -> ModelOutput:
+    def total_projects(self) -> Output:
         _, built = self.results
-        return ModelOutput(
+        return Output(
             scenario=self.scenario,
             label="Projects Funded",
             description="Number of projects funded each year",
@@ -134,10 +134,10 @@ class CommunityPortfolio(CommonModelMixin, BaseModel):
 
     @computed_field
     @property
-    def opex(self) -> ModelOutput:
+    def opex(self) -> Output:
         agg, _ = self.results
         src = self.model.opex
-        return ModelOutput(
+        return Output(
             scenario=self.scenario,
             label=src.label.replace("project", "accelerator"),
             description=src.description,
@@ -147,10 +147,10 @@ class CommunityPortfolio(CommonModelMixin, BaseModel):
 
     @computed_field
     @property
-    def retained_earnings(self) -> ModelOutput:
+    def retained_earnings(self) -> Output:
         agg, _ = self.results
         src = self.model.retained_earnings
-        return ModelOutput(
+        return Output(
             scenario=self.scenario,
             label=src.label.replace("project", "accelerator"),
             description=src.description,
@@ -160,10 +160,10 @@ class CommunityPortfolio(CommonModelMixin, BaseModel):
 
     @computed_field
     @property
-    def revenue(self) -> ModelOutput:
+    def revenue(self) -> Output:
         agg, _ = self.results
         src = self.model.revenue
-        return ModelOutput(
+        return Output(
             scenario=self.scenario,
             label=src.label.replace("project", "accelerator"),
             description=src.description,
@@ -173,10 +173,10 @@ class CommunityPortfolio(CommonModelMixin, BaseModel):
 
     @computed_field
     @property
-    def finance_costs(self) -> ModelOutput:
+    def finance_costs(self) -> Output:
         agg, _ = self.results
         src = self.model.finance_costs
-        return ModelOutput(
+        return Output(
             scenario=self.scenario,
             label=src.label.replace("project", "accelerator"),
             description=src.description,
@@ -186,10 +186,10 @@ class CommunityPortfolio(CommonModelMixin, BaseModel):
 
     @computed_field
     @property
-    def total_cash(self) -> ModelOutput:
+    def total_cash(self) -> Output:
         agg, _ = self.results
         src = self.model.total_cash
-        return ModelOutput(
+        return Output(
             scenario=self.scenario,
             label=src.label.replace("project", "accelerator"),
             description=src.description,
@@ -199,10 +199,10 @@ class CommunityPortfolio(CommonModelMixin, BaseModel):
 
     @computed_field
     @property
-    def free_cash_flow(self) -> ModelOutput:
+    def free_cash_flow(self) -> Output:
         agg, _ = self.results
         src = self.model.free_cash_flow
-        return ModelOutput(
+        return Output(
             scenario=self.scenario,
             label=src.label.replace("project", "accelerator"),
             description=src.description,
@@ -212,10 +212,10 @@ class CommunityPortfolio(CommonModelMixin, BaseModel):
 
     @computed_field
     @property
-    def system_output(self) -> ModelOutput:
+    def system_output(self) -> Output:
         agg, _ = self.results
         src = self.model.system_output
-        return ModelOutput(
+        return Output(
             scenario=self.scenario,
             label=src.label.replace("project", "accelerator"),
             description=src.description,
@@ -225,10 +225,10 @@ class CommunityPortfolio(CommonModelMixin, BaseModel):
 
     @computed_field
     @property
-    def total_capacity(self) -> ModelOutput:
+    def total_capacity(self) -> Output:
         agg, _ = self.results
         src = self.model.system_output
-        return ModelOutput(
+        return Output(
             scenario=self.scenario,
             label=src.label.replace("project", "accelerator"),
             description=src.description,
@@ -280,7 +280,7 @@ class CommunityPortfolio(CommonModelMixin, BaseModel):
                 label_visibility="collapsed",
             )
             if name:
-                input: ModelInput = getattr(self, name)
+                input: Input = getattr(self, name)
                 input.controls
 
     def portfolio_layout(self) -> None:
@@ -325,7 +325,7 @@ class CommunityPortfolio(CommonModelMixin, BaseModel):
             )
 
             if metric:
-                obj: ModelCalculation | ModelOutput = getattr(self, metric)
+                obj: Calculation | Output = getattr(self, metric)
                 if chart_type == "Timeseries":
                     fig = obj.timeseries_plot
                 elif chart_type == "Surface":
@@ -365,7 +365,7 @@ class CommunityPortfolio(CommonModelMixin, BaseModel):
 
         npv_dict: Dict[str, NdArray] = {}
         for name in self.output_names:
-            out: ModelOutput = getattr(self, name)
+            out: Output = getattr(self, name)
             # only dollar outputs
             if out.units and out.units.startswith("$"):
                 # ModelOutput.npv will prepend a zero at t=0 and call npf.npv

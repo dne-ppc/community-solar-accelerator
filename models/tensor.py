@@ -8,7 +8,7 @@ import numpy as np
 from pydantic import BaseModel
 import numpy_financial as npf
 
-from models.core.registry import RoleRegistry, register_role
+from models.utils import RoleRegistry, register_role
 
 NdArray = TypeVar("numpy.ndarray")
 
@@ -16,7 +16,7 @@ np.float_ = np.float64
 
 
 @register_role("tensor")  # neutral base role; concrete subclasses set their own role
-class TensorCore(BaseModel):
+class Tensor(BaseModel):
 
     scenario: str
     label: str
