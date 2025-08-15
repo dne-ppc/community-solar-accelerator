@@ -192,7 +192,7 @@ itc_year:
   p90: 3
   scenario: Base
   step: 1
-  units: null
+  units: unitless
   use_fixed: true
   years: 1
 maintenance_rate:

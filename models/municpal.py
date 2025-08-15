@@ -6,7 +6,7 @@ import pandas as pd
 from pydantic import BaseModel, computed_field
 
 # Project modules
-from models.core.types import ModelInput, ModelOutput, ModelCalculation, PandasDataFrame, NdArray
+from models.core.types import Input, Output, Calculation, PandasDataFrame, NdArray
 from models.financial import FinancialModel
 
 np.float_ = np.float64
@@ -33,31 +33,31 @@ class ValuePerAcre(FinancialModel):
     # ----------------------
     # Core land/intensity inputs
     # ----------------------
-    parcel_acres: ModelInput                    # Total parcel size (acres)
-    assessed_value_per_acre: ModelInput         # Taxable assessed value per acre ($/acre)
-    assessed_value_growth_rate: ModelInput      # Annual % growth of assessed value
+    parcel_acres: Input                    # Total parcel size (acres)
+    assessed_value_per_acre: Input         # Taxable assessed value per acre ($/acre)
+    assessed_value_growth_rate: Input      # Annual % growth of assessed value
 
     # ----------------------
     # Revenues (per acre)
     # ----------------------
-    property_tax_rate: ModelInput               # Mill rate in %, applied to assessed value
-    other_revenue_per_acre: ModelInput          # Fees/utility/franchise/etc. ($/acre/yr)
-    other_revenue_growth_rate: ModelInput       # %/yr escalation of other revenue
+    property_tax_rate: Input               # Mill rate in %, applied to assessed value
+    other_revenue_per_acre: Input          # Fees/utility/franchise/etc. ($/acre/yr)
+    other_revenue_growth_rate: Input       # %/yr escalation of other revenue
 
     # ----------------------
     # Costs (public burden per acre)
     # ----------------------
-    capex_public_per_acre: ModelInput           # One-time public capital cost at year 0 ($/acre)
-    opex_public_per_acre: ModelInput            # Recurring public service cost ($/acre/yr)
-    opex_growth_rate: ModelInput                # %/yr escalation of service cost
+    capex_public_per_acre: Input           # One-time public capital cost at year 0 ($/acre)
+    opex_public_per_acre: Input            # Recurring public service cost ($/acre/yr)
+    opex_growth_rate: Input                # %/yr escalation of service cost
 
     # ----------------------
     # Finance
     # ----------------------
-    discount_rate: ModelInput                   # Required by FinancialModel for NPV
+    discount_rate: Input                   # Required by FinancialModel for NPV
 
     # Optional helper: proportion of first year active (e.g., commissioning mid-year)
-    start_year_proportion: ModelInput           # 0–1 fraction applied to year 0 flows
+    start_year_proportion: Input           # 0–1 fraction applied to year 0 flows
 
     # ========== Helper schedules ==========
 
@@ -69,10 +69,10 @@ class ValuePerAcre(FinancialModel):
 
     @computed_field
     @property
-    def growth_schedule_assessed(self) -> ModelCalculation:
+    def growth_schedule_assessed(self) -> Calculation:
         """(1 + g) ** t for assessed value growth."""
         arr = (1 + (self.assessed_value_growth_rate / 100)) ** self.years_array
-        return ModelCalculation(
+        return Calculation(
             scenario=self.scenario,
             label="assessed_growth",
             description="Assessed value growth factor",
@@ -82,9 +82,9 @@ class ValuePerAcre(FinancialModel):
 
     @computed_field
     @property
-    def growth_schedule_other_rev(self) -> ModelCalculation:
+    def growth_schedule_other_rev(self) -> Calculation:
         arr = (1 + (self.other_revenue_growth_rate / 100)) ** self.years_array
-        return ModelCalculation(
+        return Calculation(
             scenario=self.scenario,
             label="other_rev_growth",
             description="Other revenue growth factor",
@@ -94,9 +94,9 @@ class ValuePerAcre(FinancialModel):
 
     @computed_field
     @property
-    def growth_schedule_opex(self) -> ModelCalculation:
+    def growth_schedule_opex(self) -> Calculation:
         arr = (1 + (self.opex_growth_rate / 100)) ** self.years_array
-        return ModelCalculation(
+        return Calculation(
             scenario=self.scenario,
             label="opex_growth",
             description="OPEX growth factor",
@@ -108,11 +108,11 @@ class ValuePerAcre(FinancialModel):
 
     @computed_field
     @property
-    def assessed_value_total(self) -> ModelCalculation:
+    def assessed_value_total(self) -> Calculation:
         """Total assessed value each year (stochastic): $/ac x acres x growth."""
         base = self.assessed_value_per_acre * self.parcel_acres
         arr = base * self.growth_schedule_assessed
-        return ModelCalculation(
+        return Calculation(
             scenario=self.scenario,
             label="assessed_total",
             description="Total assessed value (tax base)",
@@ -122,12 +122,12 @@ class ValuePerAcre(FinancialModel):
 
     @computed_field
     @property
-    def property_tax_revenue(self) -> ModelOutput:
+    def property_tax_revenue(self) -> Output:
         """Annual property tax: assessed_total x (rate/100)."""
         data = self.assessed_value_total * (self.property_tax_rate / 100)
         # Apply partial first year if needed
         data[:, 0] *= self.start_year_proportion[:, 0]
-        return ModelOutput(
+        return Output(
             scenario=self.scenario,
             label="property_tax_revenue",
             description="Annual property tax revenue",
@@ -137,12 +137,12 @@ class ValuePerAcre(FinancialModel):
 
     @computed_field
     @property
-    def other_revenue_total(self) -> ModelOutput:
+    def other_revenue_total(self) -> Output:
         """Other recurring revenue: $/ac/yr x acres x growth schedule."""
         base = self.other_revenue_per_acre * self.parcel_acres
         data = base * self.growth_schedule_other_rev
         data[:, 0] *= self.start_year_proportion[:, 0]
-        return ModelOutput(
+        return Output(
             scenario=self.scenario,
             label="other_revenue",
             description="Other municipal revenues attributable to parcel",
@@ -152,14 +152,14 @@ class ValuePerAcre(FinancialModel):
 
     @computed_field
     @property
-    def capex(self) -> ModelOutput:
+    def capex(self) -> Output:
         """One-time public CAPEX at year 0: $/ac x acres (zeros thereafter)."""
         n_iter, n_years = self.iterations, self.years
         data = np.zeros((n_iter, n_years))
         data[:, 0] = (self.capex_public_per_acre * self.parcel_acres)[:, 0]
         # apply partial first-year factor if commissioning mid-year (optional)
         data[:, 0] *= self.start_year_proportion[:, 0]
-        return ModelOutput(
+        return Output(
             scenario=self.scenario,
             label="capex",
             description="Initial public capital outlay",
@@ -169,12 +169,12 @@ class ValuePerAcre(FinancialModel):
 
     @computed_field
     @property
-    def opex(self) -> ModelOutput:
+    def opex(self) -> Output:
         """Annual public OPEX: $/ac/yr x acres x growth schedule."""
         base = self.opex_public_per_acre * self.parcel_acres
         data = base * self.growth_schedule_opex
         data[:, 0] *= self.start_year_proportion[:, 0]
-        return ModelOutput(
+        return Output(
             scenario=self.scenario,
             label="opex",
             description="Annual public operating costs",
@@ -186,9 +186,9 @@ class ValuePerAcre(FinancialModel):
 
     @computed_field
     @property
-    def total_revenue(self) -> ModelOutput:
+    def total_revenue(self) -> Output:
         data = self.property_tax_revenue + self.other_revenue_total
-        return ModelOutput(
+        return Output(
             scenario=self.scenario,
             label="total_revenue",
             description="Total municipal revenue from the parcel",
@@ -198,10 +198,10 @@ class ValuePerAcre(FinancialModel):
 
     @computed_field
     @property
-    def net_cashflow(self) -> ModelOutput:
+    def net_cashflow(self) -> Output:
         """Yearly net cash available: revenue − opex − capex (capex only in y0)."""
         data = self.total_revenue - self.opex - self.capex
-        return ModelOutput(
+        return Output(
             scenario=self.scenario,
             label="net_cashflow",
             description="Net fiscal cash flow attributable to the parcel",
@@ -211,12 +211,12 @@ class ValuePerAcre(FinancialModel):
 
     @computed_field
     @property
-    def value_per_acre(self) -> ModelCalculation:
+    def value_per_acre(self) -> Calculation:
         """Per-acre net cash each year for KPI/visualization (stochastic)."""
         # Guard against divide-by-zero
         acres = np.where(self.parcel_acres.data == 0, np.nan, self.parcel_acres.data)
         data = self.net_cashflow.data / acres
-        return ModelCalculation(
+        return Calculation(
             scenario=self.scenario,
             label="value_per_acre",
             description="Annual net fiscal value per acre",
@@ -250,7 +250,7 @@ class ValuePerAcre(FinancialModel):
 
     @computed_field
     @property
-    def per_acre_npv(self) -> ModelCalculation:
+    def per_acre_npv(self) -> Calculation:
         """NPV per acre of the net cashflow stream."""
         rates = self.discount_rate[:, 0] / 100
         # Build cashflow including year 0 explicitly
@@ -266,7 +266,7 @@ class ValuePerAcre(FinancialModel):
         vals = np.array([_npv(rates[i], np.concatenate([[0.0], arr[i]]) ) for i in range(iters)])
         per_acre_vals = vals / acres
         data = per_acre_vals.reshape(iters, 1)
-        return ModelCalculation(
+        return Calculation(
             scenario=self.scenario,
             label="per_acre_npv",
             description="NPV per acre of net municipal cash flows",
