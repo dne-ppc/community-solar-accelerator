@@ -122,7 +122,7 @@ class TensorGraph:
         """
         Reload every ModelInput from the given YAML.
         """
-        for name in type(self).role_names_cls("input"):
+        for name in self.role_names("input"):
 
             mi = Input.from_config(
                 self.scenario,

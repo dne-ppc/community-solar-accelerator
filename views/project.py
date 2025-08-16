@@ -1,11 +1,10 @@
 import streamlit as st
 from models.types import Input
 from utils import get_config_paths
-from ui.distributions import controls
+from views.distributions import controls
 
 
-
-def configure_project(project) -> None:
+def configure(project) -> None:
 
     if f"{project.scenario}-input_selection_row" not in st.session_state:
         st.session_state[f"{project.scenario}-input_selection_row"] = 0

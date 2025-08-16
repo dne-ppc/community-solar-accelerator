@@ -154,7 +154,7 @@ class SolarProject(FinancialModel):
             label="maintenance_cost",
             description="Annual maintenance cost adjusted for inflation",
             units="$CAD",
-            data=arr,
+            data=-arr,
         )
 
     @computed_field
@@ -170,7 +170,7 @@ class SolarProject(FinancialModel):
             label="admin_cost",
             description="Annual administrative cost adjusted for inflation",
             units="$CAD",
-            data=arr,
+            data=-arr,
         )
 
     @computed_field
@@ -186,7 +186,7 @@ class SolarProject(FinancialModel):
             label="insurance_cost",
             description="Annual insurance cost adjusted for inflation",
             units="$CAD",
-            data=arr,
+            data=-arr,
         )
 
     @computed_field

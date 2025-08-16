@@ -2,7 +2,7 @@ from __future__ import annotations
 
 
 import streamlit as st
-from visualization import plot
+from visualization import distributions
 
 def controls(tensor) -> None:
     """
@@ -52,7 +52,7 @@ def controls(tensor) -> None:
                 return
 
             container.plotly_chart(
-                plot.dist(tensor.dist, tensor.data),
+                distributions.plot(tensor.dist, tensor.data),
                 use_container_width=True,
                 key=f"{tensor.scenario}_{tensor.label}_dist_plot",
             )

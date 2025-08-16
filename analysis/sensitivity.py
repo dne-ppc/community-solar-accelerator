@@ -9,7 +9,7 @@ from contextlib import contextmanager
 import numpy as np
 
 
-from models.core.types import Input,Tensor
+from models.types import Input,Tensor
 
 
 # -------------------- util: temporary input overrides --------------------

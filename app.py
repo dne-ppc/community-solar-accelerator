@@ -3,7 +3,7 @@ import streamlit as st
 # from layout import Layout
 # from models.portfolio import CommunityPortfolio
 from projects.solar import SolarProject
-from ui.solar import layout
+from views.solar import layout
 
 
 st.set_page_config(
